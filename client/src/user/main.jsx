@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import UserIndex from "./index";
 import { setToken as setAPIToken } from "../api";
+import "../style.css";
 
 const root = createRoot(document.getElementById("root"));
 

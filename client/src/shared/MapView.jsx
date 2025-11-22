@@ -1,54 +1,67 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import API from "../api";
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-export default function MapView() {
-  const [stations, setStations] = React.useState([]);
+export default function MapView({ stations: stationProp = [] }) {
+  const [stations, setStations] = useState(stationProp);
 
   useEffect(() => {
-    load();
-  }, []);
+    if (!stationProp.length) {
+      load();
+    }
+  }, [stationProp.length]);
   async function load() {
     const res = await API.get("/stations");
     setStations(res.data);
   }
 
+  useEffect(() => {
+    if (stationProp.length) {
+      setStations(stationProp);
+    }
+  }, [stationProp]);
+
+  const defaultSeoulView = [37.548, 126.98];
+  const viewZoom = 12;
+
   const center = stations[0]
     ? [stations[0].lat, stations[0].lng]
-    : [37.5665, 126.978];
+    : defaultSeoulView;
+
+  const defaultIcon = useMemo(
+    () =>
+      L.icon({
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      }),
+    []
+  );
 
   return (
-    <div className="card" style={{ height: "60vh" }}>
-      <MapContainer
-        center={center}
-        zoom={14}
-        style={{ height: "100%", width: "100%" }}
-      >
+    <div className="map-wrapper">
+      <MapContainer center={center} zoom={viewZoom} style={{ height: "100%", width: "100%" }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {stations
-          .filter((s) => s.open)
-          .map((s) => (
-            <Marker key={s.id} position={[s.lat, s.lng]}>
-              <Popup>
-                <div>
-                  <strong>{s.name}</strong>
-                </div>
-                <div>
-                  Available: {s.available} / {s.capacity}
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+        {stations.map((s) => (
+          <Marker key={s.id} position={[s.lat, s.lng]} icon={defaultIcon}>
+            <Popup>
+              <div>
+                <strong>{s.name}</strong>
+              </div>
+              <div>
+                Available: {s.available} / {s.capacity}
+              </div>
+              <div>Status: {s.open ? "Open" : "Closed"}</div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
     </div>
   );

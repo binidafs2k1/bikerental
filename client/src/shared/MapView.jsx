@@ -36,7 +36,8 @@ export default function MapView({ stations: stationProp = [] }) {
         iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
         iconRetinaUrl:
           "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
@@ -47,7 +48,11 @@ export default function MapView({ stations: stationProp = [] }) {
 
   return (
     <div className="map-wrapper">
-      <MapContainer center={center} zoom={viewZoom} style={{ height: "100%", width: "100%" }}>
+      <MapContainer
+        center={center}
+        zoom={viewZoom}
+        style={{ height: "100%", width: "100%" }}
+      >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {stations.map((s) => (
           <Marker key={s.id} position={[s.lat, s.lng]} icon={defaultIcon}>

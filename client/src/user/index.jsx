@@ -1,29 +1,38 @@
-// User App Entry - Router wrapper
 import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
+  NavLink,
   Link,
   Navigate,
 } from "react-router-dom";
+import {
+  LayoutDashboard,
+  MapPin,
+  MessageSquare,
+  FileText,
+  Bike,
+  User,
+  BarChart3,
+  LogOut,
+} from "lucide-react";
 import Stations from "../shared/Stations";
-import MapView from "../shared/MapView";
 import Posts from "../shared/Posts";
 import ReportForm from "../shared/ReportForm";
 import Rentals from "../shared/Rentals";
 import Profile from "../shared/Profile";
-import Visualization from "../shared/Visualization";
-import Login from "../shared/Login";
-import Register from "../shared/Register";
+import AuthForm from "./AuthForm";
 
-export default function UserIndex({
-  token,
-  setToken,
-  username,
-  setUsername,
-  onLogout,
-}) {
+const navLinks = [
+  { label: "Home", path: "/home", icon: <LayoutDashboard size={18} /> },
+  { label: "Posts", path: "/posts", icon: <MessageSquare size={18} /> },
+  { label: "Report", path: "/report", icon: <FileText size={18} /> },
+  { label: "My Rentals", path: "/rentals", icon: <Bike size={18} /> },
+  { label: "Profile", path: "/profile", icon: <User size={18} /> },
+];
+
+export default function UserIndex({ token, setToken, username, onLogout }) {
   const handleLogin = (newToken) => {
     setToken(newToken);
   };
@@ -35,75 +44,75 @@ export default function UserIndex({
   if (!token) {
     return (
       <Router>
-        <header className="app-header">
-          <div className="app-title">따릉이 - BikeShare (User)</div>
-          <nav className="nav container">
-            <Link to="/login" className="btn">
-              Login
-            </Link>
-            <Link to="/register" className="btn secondary">
-              Register
-            </Link>
-          </nav>
-        </header>
-        <main className="container">
-          <Routes>
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route
-              path="/register"
-              element={<Register onRegister={handleLogin} />}
-            />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </Routes>
-        </main>
+        <AuthForm onLogin={handleLogin} />
       </Router>
     );
   }
 
   return (
     <Router>
-      <header className="app-header">
-        <div className="app-title">따릉이 - BikeShare (User)</div>
-        <nav className="nav container">
-          <Link to="/stations" className="btn">
-            Stations
-          </Link>
-          <Link to="/map" className="btn">
-            Map
-          </Link>
-          <Link to="/posts" className="btn">
-            Posts
-          </Link>
-          <Link to="/report" className="btn">
-            Report
-          </Link>
-          <Link to="/rentals" className="btn">
-            My Rentals
-          </Link>
-          <Link to="/profile" className="btn">
-            Profile
-          </Link>
-          <Link to="/visualization" className="btn">
-            Visualization
-          </Link>
-          <button className="btn ghost" onClick={handleLogout}>
-            Logout
+      <div className="user-layout">
+        <aside className="user-sidebar">
+          <div className="user-sidebar__header">
+            <div className="user-sidebar__logo">
+              <div>
+                <div className="app-title">BikeShare</div>
+                <p className="user-sidebar__welcome-text">
+                  {username ? `Welcome, ${username}` : "Hello Rider"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <nav className="user-sidebar__nav">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                className={({ isActive }) =>
+                  `user-sidebar-link${
+                    isActive ? " user-sidebar-link--active" : ""
+                  }`
+                }
+              >
+                <span className="user-sidebar-link-icon">{link.icon}</span>
+                <span>{link.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <button
+            type="button"
+            className="user-sidebar__logout"
+            onClick={handleLogout}
+          >
+            <span className="user-sidebar__logout-icon">
+              <LogOut size={16} />
+            </span>
+            <span>Logout</span>
           </button>
-          <span className="muted small right">{username}</span>
-        </nav>
-      </header>
-      <main className="container">
-        <Routes>
-          <Route path="/stations" element={<Stations />} />
-          <Route path="/map" element={<MapView />} />
-          <Route path="/posts" element={<Posts />} />
-          <Route path="/report" element={<ReportForm />} />
-          <Route path="/rentals" element={<Rentals />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/visualization" element={<Visualization />} />
-          <Route path="*" element={<Navigate to="/stations" />} />
-        </Routes>
-      </main>
+        </aside>
+        <div className="user-main">
+          <main className="user-main__content container">
+            <Routes>
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<Stations />} />
+              <Route path="/posts" element={<Posts />} />
+              <Route path="/report" element={<ReportForm />} />
+              <Route path="/rentals" element={<Rentals />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route
+                path="/stations"
+                element={<Navigate to="/home" replace />}
+              />
+              <Route path="/login" element={<Navigate to="/home" replace />} />
+              <Route
+                path="/register"
+                element={<Navigate to="/home" replace />}
+              />
+              <Route path="*" element={<Navigate to="/home" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
     </Router>
   );
 }

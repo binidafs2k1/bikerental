@@ -21,9 +21,8 @@ export default function Login({ onLogin }) {
       localStorage.setItem("token", token);
       setToken(token);
 
-      // Store admin role in localStorage for admin access
-      if (user && user.role === "admin") {
-        localStorage.setItem("isAdmin", "true");
+      // Store username
+      if (user && user.username) {
         localStorage.setItem("username", user.username);
       }
 

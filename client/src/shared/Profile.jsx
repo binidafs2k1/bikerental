@@ -12,6 +12,7 @@ export default function Profile() {
   const [editPostId, setEditPostId] = useState(null);
   const [editPostTitle, setEditPostTitle] = useState("");
   const [editPostContent, setEditPostContent] = useState("");
+  const [activeTab, setActiveTab] = useState("settings");
 
   useEffect(() => {
     fetchProfile();
@@ -24,7 +25,7 @@ export default function Profile() {
   async function fetchPosts() {
     try {
       const res = await API.get("/posts");
-      setPosts(res.data?.filter((p) => p.UserId === profile?.id) || []);
+      setPosts(res.data?.filter((p) => p.UserId === profile?.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) || []);
     } catch (e) {
       console.error("Error fetching posts:", e);
       setPosts([]);
@@ -123,96 +124,157 @@ export default function Profile() {
     }
   }
 
-  if (!profile) return <div>Loading...</div>;
+  if (!profile) return <div className="loading">Loading...</div>;
 
   return (
-    <div className="card">
-      <h3>Profile</h3>
-      <form onSubmit={save}>
-        <div>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-        </div>
-        <div>
-          <input
-            placeholder="new password (leave blank to keep)"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-        <button type="submit">Save</button>
-      </form>
+    <div className="profile-container">
+      {/* Tabs */}
+      <div className="posts-tabs">
+        <button
+          className={`posts-tab ${activeTab === "settings" ? "active" : ""}`}
+          onClick={() => setActiveTab("settings")}
+        >
+          Account Settings
+        </button>
+        <button
+          className={`posts-tab ${activeTab === "reports" ? "active" : ""}`}
+          onClick={() => setActiveTab("reports")}
+        >
+          My Reports
+        </button>
+        <button
+          className={`posts-tab ${activeTab === "posts" ? "active" : ""}`}
+          onClick={() => setActiveTab("posts")}
+        >
+          My Posts
+        </button>
+      </div>
 
-      <h4>My Reports</h4>
-      {reports.length === 0 ? (
-        <p>No reports submitted.</p>
-      ) : (
-        <ul>
-          {reports.map((r) => (
-            <li key={r.id}>
-              <strong>{r.Station?.name || "Unknown Station"}</strong>:{" "}
-              {editReportId === r.id ? (
-                <>
-                  <input
-                    value={editReportDesc}
-                    onChange={(e) => setEditReportDesc(e.target.value)}
-                  />
-                  <button onClick={() => saveEditReport(r.id)}>Save</button>
-                  <button onClick={() => setEditReportId(null)}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  {r.description} - Status: {r.status} (
-                  {new Date(r.createdAt).toLocaleDateString()})
-                  <button onClick={() => startEditReport(r)}>Edit</button>
-                  <button onClick={() => deleteReport(r.id)}>Delete</button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+      {/* Content */}
+      {activeTab === "settings" && (
+        <div className="profile-section">
+          <form onSubmit={save} className="profile-form">
+            <div className="form-group">
+              <label className="form-label">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">New Password (leave blank to keep current)</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn">Save Changes</button>
+            </div>
+          </form>
+        </div>
       )}
 
-      <h4>My Posts</h4>
-      {posts.length === 0 ? (
-        <p>No posts.</p>
-      ) : (
-        <ul>
-          {posts.map((p) => (
-            <li key={p.id}>
-              {editPostId === p.id ? (
-                <>
-                  <input
-                    value={editPostTitle}
-                    onChange={(e) => setEditPostTitle(e.target.value)}
-                  />
-                  <textarea
-                    value={editPostContent}
-                    onChange={(e) => setEditPostContent(e.target.value)}
-                  />
-                  <button onClick={() => saveEditPost(p.id)}>Save</button>
-                  <button onClick={() => setEditPostId(null)}>Cancel</button>
-                </>
-              ) : (
-                <>
-                  <strong>{p.title}</strong>: {p.content}
-                  {(profile.role === "admin" && p.UserId === profile.id) ||
-                  p.UserId === profile.id ? (
-                    <>
-                      <button onClick={() => startEditPost(p)}>Edit</button>
-                      <button onClick={() => deletePost(p.id)}>Delete</button>
-                    </>
+      {activeTab === "reports" && (
+        <div className="profile-section">
+          {reports.length === 0 ? (
+            <p className="empty-message">No reports submitted.</p>
+          ) : (
+            <div className="reports-list">
+              {reports.map((r) => (
+                <div key={r.id} className="report-item">
+                  <div className="report-header">
+                    <span className="report-station">{r.Station?.name || "Unknown Station"}</span>
+                    <span className={`status-badge status-${r.status}`}>
+                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                    </span>
+                  </div>
+                  <div className="report-content">
+                    {editReportId === r.id ? (
+                      <div className="edit-form">
+                        <textarea
+                          value={editReportDesc}
+                          onChange={(e) => setEditReportDesc(e.target.value)}
+                          className="form-textarea"
+                          rows={3}
+                        />
+                        <div className="edit-actions">
+                          <button onClick={() => saveEditReport(r.id)} className="btn small">Save</button>
+                          <button onClick={() => setEditReportId(null)} className="btn secondary small">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p>{r.description}</p>
+                        <div className="report-meta">
+                          <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                          <div className="item-actions">
+                            <button onClick={() => startEditReport(r)} className="btn-link">Edit</button>
+                            <button onClick={() => deleteReport(r.id)} className="btn-link danger">Delete</button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "posts" && (
+        <div className="profile-section">
+          {posts.length === 0 ? (
+            <p className="empty-message">No posts.</p>
+          ) : (
+            <div className="posts-list">
+              {posts.map((p) => (
+                <div key={p.id} className="post-item">
+                  {editPostId === p.id ? (
+                    <div className="edit-form">
+                      <input
+                        type="text"
+                        value={editPostTitle}
+                        onChange={(e) => setEditPostTitle(e.target.value)}
+                        className="form-input"
+                        placeholder="Title"
+                      />
+                      <textarea
+                        value={editPostContent}
+                        onChange={(e) => setEditPostContent(e.target.value)}
+                        className="form-textarea"
+                        rows={4}
+                        placeholder="Content"
+                      />
+                      <div className="edit-actions">
+                        <button onClick={() => saveEditPost(p.id)} className="btn small">Save</button>
+                        <button onClick={() => setEditPostId(null)} className="btn secondary small">Cancel</button>
+                      </div>
+                    </div>
                   ) : (
-                    <button onClick={() => deletePost(p.id)}>Delete</button>
+                    <>
+                      <h5 className="post-title">{p.title}</h5>
+                      <p className="post-content">{p.content}</p>
+                      <div className="post-meta">
+                        <span>{new Date(p.createdAt).toLocaleDateString()}</span>
+                        <div className="item-actions">
+                          <button onClick={() => startEditPost(p)} className="btn-link">Edit</button>
+                          <button onClick={() => deletePost(p.id)} className="btn-link danger">Delete</button>
+                        </div>
+                      </div>
+                    </>
                   )}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

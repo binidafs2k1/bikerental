@@ -23,13 +23,16 @@ export default function ReportForm() {
   }
 
   return (
-    <div className="card">
-      <h3>Report Broken Bike</h3>
-      <form onSubmit={submit}>
-        <div>
+    <div className="report-container">
+      <h1>Report Broken Bike</h1>
+      <form onSubmit={submit} className="create-report-form">
+        <div className="form-group">
+          <label className="form-label">Station</label>
           <select
             value={stationId}
             onChange={(e) => setStationId(e.target.value)}
+            className="form-select"
+            required
           >
             {stations.map((s) => (
               <option key={s.id} value={s.id}>
@@ -38,14 +41,21 @@ export default function ReportForm() {
             ))}
           </select>
         </div>
-        <div>
+        <div className="form-group">
+          <label className="form-label">Description</label>
           <textarea
-            placeholder="Description"
+            placeholder="Describe the issue with the bike"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            className="form-textarea"
+            required
           />
         </div>
-        <button type="submit">Send Report</button>
+        <div className="form-actions">
+          <button type="submit" className="btn">
+            Send Report
+          </button>
+        </div>
       </form>
     </div>
   );

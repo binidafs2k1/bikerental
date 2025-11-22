@@ -2,30 +2,47 @@ import React, { useState } from "react";
 import { MapPin, Lock, User } from "lucide-react";
 import API, { setToken } from "../api";
 
-export default function Register({ onRegister }) {
+export default function AuthForm({ onLogin }) {
+  const [isLogin, setIsLogin] = useState(true); // true for login, false for register
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function register(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      await API.post("/auth/register", { username, password });
-      // auto-login
-      const res = await API.post("/auth/login", { username, password });
-      const { token, user } = res.data;
-      setToken(token);
-      if (user && user.username) {
-        localStorage.setItem("username", user.username);
+      if (isLogin) {
+        // Login
+        const res = await API.post("/auth/login", { username, password });
+        const { token, user } = res.data;
+        localStorage.setItem("token", token);
+        setToken(token);
+        if (user && user.username) {
+          localStorage.setItem("username", user.username);
+        }
+        onLogin(token);
+      } else {
+        // Register
+        await API.post("/auth/register", { username, password });
+        // Auto-login after register
+        const res = await API.post("/auth/login", { username, password });
+        const { token, user } = res.data;
+        localStorage.setItem("token", token);
+        setToken(token);
+        if (user && user.username) {
+          localStorage.setItem("username", user.username);
+        }
+        onLogin(token);
       }
-      onRegister(token);
     } catch (e) {
       setError(
-        "Registration failed: " + (e.response?.data?.error || e.message)
+        (isLogin ? "Login" : "Registration") +
+          " failed: " +
+          (e.response?.data?.error || e.message)
       );
     } finally {
       setLoading(false);
@@ -41,14 +58,16 @@ export default function Register({ onRegister }) {
             <MapPin size={32} />
             <h1>BikeShare</h1>
           </div>
-          <p className="user-login-subtitle">Create your account</p>
+          <p className="user-login-subtitle">
+            {isLogin ? "Sign in to your account" : "Create your account"}
+          </p>
         </div>
 
         {/* Error Message */}
         {error && <div className="user-login-error">{error}</div>}
 
-        {/* Register Form */}
-        <form onSubmit={register} className="user-login-form">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="user-login-form">
           <div className="user-input-group">
             <label htmlFor="username">Username</label>
             <div className="user-input-with-icon">
@@ -82,9 +101,29 @@ export default function Register({ onRegister }) {
           </div>
 
           <button type="submit" className="user-login-btn" disabled={loading}>
-            {loading ? "Creating account..." : "Create Account"}
+            {loading
+              ? isLogin
+                ? "Signing in..."
+                : "Creating account..."
+              : isLogin
+              ? "Sign In"
+              : "Create Account"}
           </button>
         </form>
+
+        {/* Toggle */}
+        <div className="user-auth-toggle">
+          <p>
+            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              type="button"
+              className="user-toggle-btn"
+              onClick={() => setIsLogin(!isLogin)}
+            >
+              {isLogin ? "Register" : "Login"}
+            </button>
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="user-login-footer">

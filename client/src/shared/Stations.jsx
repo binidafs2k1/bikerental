@@ -66,7 +66,8 @@ export default function Stations() {
           <p className="hero-label">BikeShare Stations</p>
           <h1 className="hero-title">Find a station, reserve quickly</h1>
           <p className="hero-subtitle">
-            Browse open hubs, check availability, and get live map updates in one place.
+            Browse open hubs, check availability, and get live map updates in
+            one place.
           </p>
         </div>
 
@@ -101,7 +102,9 @@ export default function Stations() {
                 Tap to view details, rent bikes, or plan your route.
               </p>
             </div>
-            <span className="station-count">{filteredStations.length} results</span>
+            <span className="station-count">
+              {filteredStations.length} results
+            </span>
           </div>
           <div className="station-list__content">
             {filteredStations.map((station) => (
@@ -113,7 +116,9 @@ export default function Stations() {
                       <strong>{station.name}</strong>
                     </div>
                     <span
-                      className={`status-label ${station.open ? "status-open" : "status-closed"}`}
+                      className={`status-label ${
+                        station.open ? "status-open" : "status-closed"
+                      }`}
                     >
                       {station.open ? "Open" : "Closed"}
                     </span>
@@ -128,10 +133,12 @@ export default function Stations() {
                 </div>
                 <div className="station-card__body">
                   <p className="station-card__text">
-                    Available: <strong>{station.available}</strong> / {station.capacity}
+                    Available: <strong>{station.available}</strong> /{" "}
+                    {station.capacity}
                   </p>
                   <p className="station-card__text">
-                    Lat {formatCoord(station.lat)} · Lng {formatCoord(station.lng)}
+                    Lat {formatCoord(station.lat)} · Lng{" "}
+                    {formatCoord(station.lng)}
                   </p>
                 </div>
               </div>
@@ -142,7 +149,9 @@ export default function Stations() {
           </div>
         </div>
         <div className="station-map">
-          <MapView stations={filteredStations.length ? filteredStations : stations} />
+          <MapView
+            stations={filteredStations.length ? filteredStations : stations}
+          />
         </div>
       </section>
     </div>

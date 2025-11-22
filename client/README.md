@@ -5,7 +5,9 @@ Install and run:
 ```powershell
 cd client
 npm install
-npm run dev
+npm run user (user dashboard)
+npm run admin (admin dashboard)
+npm run dev (for development)
 ```
 
 Open the URL shown by Vite (usually http://localhost:5173) and ensure the server is running at `http://localhost:4000`.

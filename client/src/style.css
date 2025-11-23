@@ -257,6 +257,10 @@ body {
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+/* Mobile bottom navbar for user app (separate from sidebar) */
+  .user-mobile-nav {
+    display: none; /* default hidden, shown only at small breakpoints */
+  }
   background-color: var(--input);
   color: var(--foreground);
   font-size: 0.875rem;
@@ -266,6 +270,20 @@ body {
 
 .form-textarea:focus {
   outline: none;
+  @media (max-width: 1024px) {
+    .user-mobile-nav {
+      display: flex;
+    }
+
+    /* hide the large sidebar in this breakpoint range */
+    .user-sidebar {
+      display: none !important;
+    }
+
+    .user-main__content {
+      padding-bottom: 96px; /* room for the mobile nav */
+    }
+  }
   border-color: var(--ring);
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
 }

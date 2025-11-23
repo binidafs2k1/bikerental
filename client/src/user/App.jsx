@@ -21,6 +21,7 @@ import Posts from "../shared/Posts";
 import ReportForm from "../shared/ReportForm";
 import Rentals from "../shared/Rentals";
 import Profile from "../shared/Profile";
+import MobileNav from "./MobileNav";
 
 const navLinks = [
   { label: "Home", path: "/home", icon: <LayoutDashboard size={18} /> },
@@ -31,11 +32,10 @@ const navLinks = [
 ];
 
 export default function UserApp() {
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   return (
     <Router>
       <div className="user-layout">
-        <aside className={`user-sidebar ${sidebarOpen ? "open" : ""}`}>
+        <aside className="user-sidebar">
           <div className="user-sidebar__header">
             <div className="user-sidebar__logo">
               <span className="user-sidebar__logo-icon">🚴</span>
@@ -55,7 +55,6 @@ export default function UserApp() {
                     isActive ? " user-sidebar-link--active" : ""
                   }`
                 }
-                onClick={() => setSidebarOpen(false)}
               >
                 <span className="user-sidebar-link-icon">{link.icon}</span>
                 <span>{link.label}</span>
@@ -70,16 +69,6 @@ export default function UserApp() {
           </button>
         </aside>
         <div className="user-main">
-          <div className="user-mobile-header" style={{ display: "none" }}>
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="admin-btn admin-btn-ghost"
-            >
-              {/* Menu icon */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
-            </button>
-            <div className="app-title">BikeShare</div>
-          </div>
           <main className="user-main__content container">
             <Routes>
               <Route path="/" element={<Navigate to="/home" replace />} />
@@ -91,14 +80,9 @@ export default function UserApp() {
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </main>
+          {/* Mobile nav rendered alongside main content, visible only on small screens */}
+          <MobileNav links={navLinks} />
         </div>
-        {sidebarOpen && (
-          <div
-            className="user-sidebar-overlay"
-            onClick={() => setSidebarOpen(false)}
-            style={{ display: "none" }}
-          />
-        )}
       </div>
     </Router>
   );

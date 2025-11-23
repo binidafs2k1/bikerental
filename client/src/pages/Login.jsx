@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API, { setToken } from "../api";
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   async function login(e) {
     e.preventDefault();
@@ -11,6 +13,8 @@ export default function Login({ onLogin }) {
     const { token } = res.data;
     setToken(token);
     onLogin(token);
+    // go to the main home/stations page after login
+    navigate("/stations");
   }
 
   return (

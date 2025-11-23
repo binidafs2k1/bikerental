@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
   MapPin,
@@ -12,14 +13,8 @@ import {
 } from "lucide-react";
 import "./admin.css";
 
-import AdminDashboard from "../shared/AdminDashboard";
-import AdminUsers from "../shared/AdminUsers";
-import AdminStations from "../shared/AdminStations";
-import AdminReports from "../shared/AdminReports";
-import AdminPosts from "../shared/AdminPosts";
-
 export default function AdminLayout({ username, onLogout }) {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // active tab is determined by the route path now (NavLink + Outlet)
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const logout = () => {
@@ -29,7 +24,8 @@ export default function AdminLayout({ username, onLogout }) {
       localStorage.removeItem("token");
       localStorage.removeItem("isAdmin");
       localStorage.removeItem("username");
-      window.location.href = "/";
+      // If we don't have parent logout handler, go to the admin login screen
+      window.location.href = "/admin/login";
     }
   };
 
@@ -61,22 +57,7 @@ export default function AdminLayout({ username, onLogout }) {
     },
   ];
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return <AdminDashboard />;
-      case "users":
-        return <AdminUsers />;
-      case "stations":
-        return <AdminStations />;
-      case "reports":
-        return <AdminReports />;
-      case "posts":
-        return <AdminPosts />;
-      default:
-        return <AdminDashboard />;
-    }
-  };
+  // The content for each admin page is now rendered by nested routes via <Outlet />
 
   return (
     <div className="admin-layout">
@@ -102,16 +83,19 @@ export default function AdminLayout({ username, onLogout }) {
 
         <nav className="admin-nav">
           {menuItems.map((item) => (
-            <button
+            <NavLink
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`admin-nav-item ${
-                activeTab === item.id ? "active" : ""
-              }`}
+              // Use relative paths so the layout works both when mounted at /admin
+              // (nested under main app) and when served standalone at root (/).
+              to={item.id === "dashboard" ? "." : item.id}
+              className={({ isActive }) =>
+                `admin-nav-item ${isActive ? "active" : ""}`
+              }
+              end={item.id === "dashboard"}
             >
               {item.icon}
               {item.label}
-            </button>
+            </NavLink>
           ))}
 
           <div style={{ marginTop: "auto", paddingTop: "2rem" }}>
@@ -146,7 +130,10 @@ export default function AdminLayout({ username, onLogout }) {
           <div className="admin-logo">BikeRental Admin</div>
         </div>
 
-        <div className="admin-content">{renderContent()}</div>
+        <div className="admin-content">
+          {/* Render matching route content */}
+          <Outlet />
+        </div>
       </div>
 
       {/* Mobile Overlay */}

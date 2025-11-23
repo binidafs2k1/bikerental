@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  NavLink,
+  Navigate,
+} from "react-router-dom";
 import Login from "./pages/Login";
 import Stations from "./pages/Stations";
 import AdminIndex from "./admin/index";
@@ -14,7 +22,6 @@ import API from "./api";
 
 export default function App() {
   const [token, setTok] = useState(localStorage.getItem("token"));
-  const [page, setPage] = useState("home");
   const [username, setUsername] = useState("");
 
   useEffect(() => {
@@ -35,7 +42,6 @@ export default function App() {
   function handleLogin(t) {
     localStorage.setItem("token", t);
     setTok(t);
-    setPage("home");
   }
 
   function logout() {
@@ -43,105 +49,173 @@ export default function App() {
     localStorage.removeItem("isAdmin");
     localStorage.removeItem("username");
     setTok(null);
-    setPage("home");
     setToken(null);
   }
 
   return (
-    <div>
-      <header className="app-header">
-        <div className="app-title">따릉이 - BikeShare</div>
-        <div className="nav container">
-          {!token && (
-            <button className="btn" onClick={() => setPage("login")}>
-              Login
-            </button>
-          )}
-          {!token && (
-            <button
-              className="btn secondary"
-              onClick={() => setPage("register")}
-            >
-              Register
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("stations")}>
-              Stations
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("map")}>
-              Map
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("posts")}>
-              Posts
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("report")}>
-              Report
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("rentals")}>
-              My Rentals
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("profile")}>
-              Profile
-            </button>
-          )}
-          {token && (
-            <button className="btn" onClick={() => setPage("visual")}>
-              Visualization
-            </button>
-          )}
-          {token && localStorage.getItem("isAdmin") === "true" && (
-            <button className="btn" onClick={() => setPage("admin")}>
-              Admin
-            </button>
-          )}
-          {token && (
-            <button className="btn ghost" onClick={logout}>
-              Logout
-            </button>
-          )}
-          {token && <div className="muted small right">{username}</div>}
-        </div>
-      </header>
+    <Router>
+      <div>
+        <header className="app-header">
+          <div className="app-title">따릉이 - BikeShare</div>
+          <div className="nav container">
+            {!token && (
+              <Link to="/login" className="btn">
+                Login
+              </Link>
+            )}
+            {!token && (
+              <Link to="/register" className="btn secondary">
+                Register
+              </Link>
+            )}
+            {token && (
+              <NavLink to="/stations" className="btn">
+                Stations
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/map" className="btn">
+                Map
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/posts" className="btn">
+                Posts
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/report" className="btn">
+                Report
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/rentals" className="btn">
+                My Rentals
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/profile" className="btn">
+                Profile
+              </NavLink>
+            )}
+            {token && (
+              <NavLink to="/visualization" className="btn">
+                Visualization
+              </NavLink>
+            )}
+            {token && localStorage.getItem("isAdmin") === "true" && (
+              <Link to="/admin" className="btn">
+                Admin
+              </Link>
+            )}
+            {token && (
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  logout();
+                  // ensure we land on the home screen after logout
+                  window.location.href = "/";
+                }}
+              >
+                Logout
+              </button>
+            )}
+            {token && <div className="muted small right">{username}</div>}
+          </div>
+        </header>
 
-      <main className="container">
-        {!token && page === "login" && <Login onLogin={handleLogin} />}
-        {!token && page === "register" && <Register onRegister={handleLogin} />}
-
-        {token && page === "stations" && <Stations />}
-        {token && page === "map" && <MapView />}
-        {token && page === "posts" && <Posts />}
-        {token && page === "report" && <ReportForm />}
-        {token && page === "rentals" && <Rentals />}
-        {token && page === "profile" && <Profile />}
-        {token && page === "visual" && <Visualization />}
-        {token && page === "admin" && (
-          <AdminIndex
+        <main className="container">
+          <AppRoutes
             token={token}
-            setToken={setTok}
+            onLogin={handleLogin}
+            onRegister={handleLogin}
+            logout={logout}
             username={username}
             setUsername={setUsername}
-            onLogout={logout}
+            setTok={setTok}
           />
-        )}
-
-        {!token && page === "home" && (
-          <div className="card">
-            <h2>Welcome to Bike Rental</h2>
-            <p className="muted">Please Login or Register to continue.</p>
-          </div>
-        )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </Router>
   );
 }
+
+function AppRoutes({
+  token,
+  onLogin,
+  onRegister,
+  logout,
+  username,
+  setUsername,
+  setTok,
+}) {
+  // small wrapper component so pages can use react-router's hooks
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          !token ? (
+            <div className="card">
+              <h2>Welcome to Bike Rental</h2>
+              <p className="muted">Please Login or Register to continue.</p>
+            </div>
+          ) : (
+            <Stations />
+          )
+        }
+      />
+      <Route path="/login" element={<Login onLogin={onLogin} />} />
+      <Route path="/register" element={<Register onRegister={onRegister} />} />
+
+      <Route
+        path="/stations"
+        element={token ? <Stations /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/map"
+        element={token ? <MapView /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/posts"
+        element={token ? <Posts /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/report"
+        element={token ? <ReportForm /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/rentals"
+        element={token ? <Rentals /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/profile"
+        element={token ? <Profile /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/visualization"
+        element={token ? <Visualization /> : <Navigate to="/login" />}
+      />
+
+      <Route
+        path="/admin/*"
+        element={
+          token ? (
+            <AdminIndex
+              token={token}
+              setToken={setTok}
+              username={username}
+              setUsername={setUsername}
+              onLogout={logout}
+            />
+          ) : (
+            <Navigate to="/admin/login" />
+          )
+        }
+      />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+}
+
+// end App

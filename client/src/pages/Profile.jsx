@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import { formatDateTime, formatRelative } from "../shared/formatDate";
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -81,14 +83,36 @@ export default function Profile() {
     fetchPosts();
   }
   async function fetchProfile() {
-    const res = await API.get("/profile");
-    setProfile(res.data);
-    setUsername(res.data.username);
+    try {
+      const res = await API.get("/profile");
+      setProfile(res.data);
+      setUsername(res.data.username);
+    } catch (e) {
+      // If unauthorized, clear token and redirect to login so refresh works
+      if (e.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        // go to login
+        navigate("/login");
+        return;
+      }
+      console.error("Error fetching profile:", e);
+    }
   }
 
   async function fetchReports() {
-    const res = await API.get("/reports/me");
-    setReports(res.data);
+    try {
+      const res = await API.get("/reports/me");
+      setReports(res.data);
+    } catch (e) {
+      if (e.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+      console.error("Error fetching reports:", e);
+    }
   }
 
   async function save(e) {

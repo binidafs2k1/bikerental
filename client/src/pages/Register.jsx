@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API, { setToken } from "../api";
 
 export default function Register({ onRegister }) {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -13,6 +15,7 @@ export default function Register({ onRegister }) {
     const { token } = res.data;
     setToken(token);
     onRegister(token);
+    navigate("/stations");
   }
 
   return (

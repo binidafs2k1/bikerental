@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import { formatDateTime } from "./formatDate";
 
 export default function Rentals() {
+  const navigate = useNavigate();
   const [rentals, setRentals] = useState([]);
   const [stations, setStations] = useState([]);
   const [returning, setReturning] = useState(null); // rental being returned
@@ -21,8 +23,11 @@ export default function Rentals() {
     } catch (err) {
       // if unauthorized, clear rentals and show a helpful message
       if (err.response?.status === 401) {
-        alert("Please log in to view your rentals.");
-        setRentals([]);
+        // Unauthorized — clear auth and redirect to login so refresh works correctly
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        navigate("/login");
         return;
       }
       console.error("Failed to load rentals", err);
@@ -73,7 +78,10 @@ export default function Rentals() {
       loadStations();
     } catch (e) {
       if (e.response?.status === 401) {
-        alert("You must be logged in to return a bike.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        navigate("/login");
       } else if (e.response?.status === 403) {
         alert("You are not allowed to return this rental.");
       } else {

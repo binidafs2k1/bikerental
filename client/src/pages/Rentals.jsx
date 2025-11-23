@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 
 export default function Rentals() {
+  const navigate = useNavigate();
   const [rentals, setRentals] = useState([]);
   const [stations, setStations] = useState([]);
   const [returning, setReturning] = useState(null); // rental being returned
@@ -12,8 +14,20 @@ export default function Rentals() {
     loadStations();
   }, []);
   async function fetch() {
-    const res = await API.get("/rentals/me");
-    setRentals(res.data);
+    try {
+      const res = await API.get("/rentals/me");
+      setRentals(res.data);
+    } catch (e) {
+      if (e.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        navigate("/login");
+        return;
+      }
+      console.error("Failed to load rentals", e);
+      setRentals([]);
+    }
   }
 
   async function loadStations() {
@@ -49,6 +63,13 @@ export default function Rentals() {
       fetch();
       loadStations();
     } catch (e) {
+      if (e.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        localStorage.removeItem("username");
+        navigate("/login");
+        return;
+      }
       alert(e.response?.data?.error || "Error");
     }
   }

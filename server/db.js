@@ -168,6 +168,18 @@ async function init() {
     );
   `);
 
+  // Favorites table for storing user favorite stations
+  await query(`
+      CREATE TABLE IF NOT EXISTS Favorites (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        UserId INT,
+        StationId INT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (UserId) REFERENCES Users(id) ON DELETE CASCADE,
+        FOREIGN KEY (StationId) REFERENCES Stations(id) ON DELETE CASCADE
+      );
+    `);
+
   // Seed default admin if missing
   const adminUser = process.env.ADMIN_USER || "admin";
   const adminPass = process.env.ADMIN_PASS || "adminpass";

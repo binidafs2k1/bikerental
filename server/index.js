@@ -16,6 +16,7 @@ app.use("/auth", authRoutes);
 const profileRoutes = require("./routes/profile");
 const statsRoutes = require("./routes/stats");
 const rentalsRoutes = require("./routes/rentals");
+const favoritesRoutes = require("./routes/favorites");
 app.use("/admin", adminRoutes);
 app.use("/stations", stationsRoutes);
 app.use("/posts", postsRoutes);
@@ -23,6 +24,7 @@ app.use("/reports", reportsRoutes);
 app.use("/profile", profileRoutes);
 app.use("/stats", statsRoutes);
 app.use("/rentals", rentalsRoutes);
+app.use("/favorites", favoritesRoutes);
 
 const PORT = process.env.PORT || 4000;
 

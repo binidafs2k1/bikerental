@@ -1,16 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import MapView from "./MapView";
 
 export default function Stations() {
   const [stations, setStations] = useState([]);
+  const [favorites, setFavorites] = useState({}); // { [stationId]: { id, createdAt } }
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const polling = useRef(null);
 
   useEffect(() => {
     fetchStations();
+    fetchFavorites();
     startPoll();
     return stopPoll;
   }, []);
@@ -32,6 +36,24 @@ export default function Stations() {
     }
   }
 
+  async function fetchFavorites() {
+    try {
+      // only fetch favorites if we have a token
+      if (!localStorage.getItem("token")) return setFavorites({});
+      const res = await API.get("/favorites/me");
+      const map = {};
+      for (const f of res.data) {
+        if (f.Station && f.Station.id)
+          map[f.Station.id] = { id: f.id, createdAt: f.createdAt };
+      }
+      setFavorites(map);
+    } catch (e) {
+      // ignore unauthorized (not logged in), or other errors
+      if (e.response?.status === 401) return setFavorites({});
+      console.error("Unable to load favorites", e);
+    }
+  }
+
   async function rent(id) {
     try {
       const res = await API.post("/rentals/rent", { stationId: id });
@@ -39,6 +61,34 @@ export default function Stations() {
       fetchStations();
     } catch (e) {
       alert(e.response?.data?.error || "Error renting bike");
+    }
+  }
+
+  async function toggleFavorite(stationId) {
+    try {
+      if (!localStorage.getItem("token")) {
+        // not logged in — navigate to login
+        navigate("/login");
+        return;
+      }
+      const res = await API.post("/favorites", { stationId });
+      if (res.data.favorited) {
+        // created
+        setFavorites((s) => ({
+          ...s,
+          [stationId]: { id: res.data.id, createdAt: res.data.createdAt },
+        }));
+      } else {
+        setFavorites((s) => {
+          const copy = { ...s };
+          delete copy[stationId];
+          return copy;
+        });
+      }
+    } catch (e) {
+      console.error("Unable to toggle favorite", e);
+      if (e.response?.status === 401) navigate("/login");
+      else alert(e.response?.data?.error || "Error toggling favorite");
     }
   }
 
@@ -115,13 +165,31 @@ export default function Stations() {
                       <MapPin size={16} />
                       <strong>{station.name}</strong>
                     </div>
-                    <span
-                      className={`status-label ${
-                        station.open ? "status-open" : "status-closed"
-                      }`}
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
                     >
-                      {station.open ? "Open" : "Closed"}
-                    </span>
+                      <span
+                        className={`status-label ${
+                          station.open ? "status-open" : "status-closed"
+                        }`}
+                      >
+                        {station.open ? "Open" : "Closed"}
+                      </span>
+                      <button
+                        className={`favorite-button ${
+                          favorites[station.id] ? "favorited" : ""
+                        }`}
+                        onClick={() => toggleFavorite(station.id)}
+                        title={
+                          favorites[station.id]
+                            ? "Unfavorite"
+                            : "Add to favorites"
+                        }
+                        aria-pressed={!!favorites[station.id]}
+                      >
+                        <Heart size={16} />
+                      </button>
+                    </div>
                   </div>
                   <button
                     className="action-pill action-pill--green station-card__button"
@@ -151,6 +219,8 @@ export default function Stations() {
         <div className="station-map">
           <MapView
             stations={filteredStations.length ? filteredStations : stations}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
           />
         </div>
       </section>

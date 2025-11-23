@@ -113,11 +113,18 @@ export default function Rentals() {
                 <strong>From:</strong> {r.fromStation?.name || r.fromStationId}
               </div>
               <div className="rental-detail">
-                <strong>To:</strong>{" "}
-                {r.toStation?.name || r.toStationId || "Not returned"}
+                <strong>
+                  {r.status === "returned" ? "Returned to:" : "To:"}
+                </strong>{" "}
+                {r.toStation?.name ||
+                  r.toStationId ||
+                  (r.status === "returned"
+                    ? "(unknown station)"
+                    : "Not returned")}
               </div>
               <div className="rental-detail">
-                <strong>Started:</strong> {formatDateTime(r.startedAt)}
+                <strong>Started:</strong>{" "}
+                {formatDateTime(r.startedAt) || "Unknown"}
               </div>
               <div className="rental-detail">
                 <strong>Ended:</strong>{" "}

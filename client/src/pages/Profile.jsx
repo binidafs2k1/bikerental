@@ -10,6 +10,7 @@ export default function Profile() {
   const [password, setPassword] = useState("");
   const [reports, setReports] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [editReportId, setEditReportId] = useState(null);
   const [editReportDesc, setEditReportDesc] = useState("");
   const [editPostId, setEditPostId] = useState(null);
@@ -19,6 +20,7 @@ export default function Profile() {
   useEffect(() => {
     fetchProfile();
     fetchReports();
+    fetchFavorites();
   }, []);
 
   useEffect(() => {
@@ -82,25 +84,6 @@ export default function Profile() {
     setEditPostContent("");
     fetchPosts();
   }
-  async function fetchProfile() {
-    try {
-      const res = await API.get("/profile");
-      setProfile(res.data);
-      setUsername(res.data.username);
-    } catch (e) {
-      // If unauthorized, clear token and redirect to login so refresh works
-      if (e.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("isAdmin");
-        localStorage.removeItem("username");
-        // go to login
-        navigate("/login");
-        return;
-      }
-      console.error("Error fetching profile:", e);
-    }
-  }
-
   async function fetchReports() {
     try {
       const res = await API.get("/reports/me");
@@ -112,6 +95,29 @@ export default function Profile() {
         return;
       }
       console.error("Error fetching reports:", e);
+    }
+  }
+
+  async function fetchFavorites() {
+    try {
+      const res = await API.get("/favorites/me");
+      setFavorites(res.data || []);
+    } catch (e) {
+      console.error("Error fetching favorites:", e);
+      setFavorites([]);
+    }
+  }
+
+  async function toggleFavoriteStation(stationId) {
+    try {
+      const res = await API.post("/favorites", { stationId });
+      // on toggle, reload favorites list
+      fetchFavorites();
+    } catch (e) {
+      console.error("Error toggling favorite:", e);
+      if (e.response?.status === 401) {
+        // redirect to login handled elsewhere
+      }
     }
   }
 
@@ -183,6 +189,34 @@ export default function Profile() {
       )}
 
       <h4>My Posts</h4>
+
+      <h4>My Favorite Stations</h4>
+      {favorites.length === 0 ? (
+        <p>No favorite stations yet.</p>
+      ) : (
+        <div className="favorites-list">
+          {favorites.map((f) => (
+            <div key={f.id} className="favorite-item">
+              <div>
+                <strong>{f.Station?.name || `Station ${f.Station?.id}`}</strong>
+                <div className="favorite-meta">
+                  {f.createdAt
+                    ? `Favorited ${new Date(f.createdAt).toLocaleString()}`
+                    : ""}
+                </div>
+              </div>
+              <div className="item-actions">
+                <button
+                  className="btn-link"
+                  onClick={() => toggleFavoriteStation(f.Station?.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {posts.length === 0 ? (
         <p>No posts.</p>
       ) : (

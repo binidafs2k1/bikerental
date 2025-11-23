@@ -492,6 +492,8 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  /* Ensure both columns stretch to the same height so map keeps aligned with list */
+  align-items: stretch;
 }
 
 .station-list {
@@ -526,6 +528,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  /* For large screens, limit the visible list height to 3 station cards and allow scrolling.
+     This prevents the list growing indefinitely and pushing the map out of view. */
+  overflow: visible;
 }
 
 .station-card {
@@ -560,6 +565,30 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--foreground);
+}
+
+/* Favorite (heart) button on station cards */
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: var(--gray-400);
+  transition: all 0.15s ease;
+}
+.favorite-button:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.06);
+}
+.favorite-button.favorited {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.12);
 }
 
 .status-label {
@@ -787,6 +816,12 @@ body {
   color: #991b1b;
 }
 
+/* Style for returned rentals */
+.status-returned {
+  background-color: #f3f4f6; /* subtle gray */
+  color: #374151; /* muted dark */
+}
+
 .rental-id {
   font-size: 0.875rem;
   color: var(--muted-foreground);
@@ -872,13 +907,64 @@ body {
   margin: 0 auto;
 }
 
-.reports-list, .posts-list {
+.reports-list,
+.posts-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.report-item, .post-item {
+/* Favorites list styling (matches report/post cards) */
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.favorite-item {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.favorite-meta {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+
+.favorite-item .item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* CSS for the JS-based favorite marker (DivIcon inside leaflet) */
+.leaflet-favorite-icon {
+  /* keep no default image; size controlled by inner element */
+  background: transparent;
+  border: none;
+}
+.leaflet-favorite-icon .favorite-pin {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff8fc7, #ff5aa3);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+/* make clickable area slightly larger for better mobile UX */
+.leaflet-favorite-icon {
+  padding: 3px 3px 0 3px;
+}
+
+.report-item,
+.post-item {
   padding: 1.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -886,11 +972,13 @@ body {
   transition: box-shadow 0.2s ease-in-out;
 }
 
-.report-item:hover, .post-item:hover {
+.report-item:hover,
+.post-item:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.report-header, .post-title {
+.report-header,
+.post-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -902,13 +990,15 @@ body {
   color: var(--foreground);
 }
 
-.report-content p, .post-content {
+.report-content p,
+.post-content {
   margin-bottom: 1rem;
   color: var(--muted-foreground);
   line-height: 1.5;
 }
 
-.report-meta, .post-meta {
+.report-meta,
+.post-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1049,6 +1139,31 @@ body {
   .hero-search {
     min-width: auto;
     width: 100%;
+  }
+}
+
+/* On desktop / large screens: allow station list to scroll after 3 cards while map remains sized */
+@media (min-width: 1025px) {
+  /* Estimate one station card height and gaps: keep this conservative so 3 cards fit comfortably */
+  .station-list__content {
+    max-height: calc(
+      3 * 120px + 2rem
+    ); /* 3 cards at approx 120px each + gap/padding */
+    overflow-y: auto;
+    /* add a subtle inner shadow for long lists */
+    padding-right: 0.25rem; /* avoid hitting the scrollbar visually */
+  }
+
+  /* Prefer the map to take the full height of the station-grid column */
+  .station-map {
+    height: 100%;
+    min-height: calc(3 * 120px + 2rem);
+  }
+
+  /* Make the map wrapper fill its column so the leaflet container stretches */
+  .map-wrapper {
+    height: 100%;
+    min-height: calc(3 * 120px + 2rem);
   }
 }
 

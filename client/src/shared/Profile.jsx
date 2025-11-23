@@ -8,6 +8,7 @@ export default function Profile() {
   const [password, setPassword] = useState("");
   const [reports, setReports] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [editReportId, setEditReportId] = useState(null);
   const [editReportDesc, setEditReportDesc] = useState("");
   const [editPostId, setEditPostId] = useState(null);
@@ -18,6 +19,7 @@ export default function Profile() {
   useEffect(() => {
     fetchProfile();
     fetchReports();
+    fetchFavorites();
   }, []);
 
   useEffect(() => {
@@ -117,6 +119,30 @@ export default function Profile() {
     }
   }
 
+  // Fetch favorites for the current user (used by the UI tabs)
+  async function fetchFavorites() {
+    try {
+      const res = await API.get("/favorites/me");
+      setFavorites(res.data || []);
+    } catch (e) {
+      console.error("Error fetching favorites:", e);
+      setFavorites([]);
+    }
+  }
+
+  // Toggle favorite for a station (create or delete). Refreshes favorites list afterwards.
+  async function toggleFavoriteStation(stationId) {
+    try {
+      await API.post("/favorites", { stationId });
+      fetchFavorites();
+    } catch (e) {
+      console.error("Error toggling favorite:", e);
+      if (e.response?.status === 401) {
+        // not logged in; no-op here
+      }
+    }
+  }
+
   async function save(e) {
     e.preventDefault();
     try {
@@ -152,6 +178,12 @@ export default function Profile() {
           onClick={() => setActiveTab("posts")}
         >
           My Posts
+        </button>
+        <button
+          className={`posts-tab ${activeTab === "favorites" ? "active" : ""}`}
+          onClick={() => setActiveTab("favorites")}
+        >
+          My Favorites
         </button>
       </div>
 
@@ -334,6 +366,39 @@ export default function Profile() {
                       </div>
                     </>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "favorites" && (
+        <div className="profile-section">
+          {favorites.length === 0 ? (
+            <p className="empty-message">No favorite stations yet.</p>
+          ) : (
+            <div className="favorites-list">
+              {favorites.map((f) => (
+                <div key={f.id} className="favorite-item">
+                  <div>
+                    <strong>
+                      {f.Station?.name || `Station ${f.Station?.id}`}
+                    </strong>
+                    <div className="favorite-meta">
+                      {f.createdAt
+                        ? `Favorited ${formatDateTime(f.createdAt)}`
+                        : ""}
+                    </div>
+                  </div>
+                  <div className="item-actions">
+                    <button
+                      className="btn-link"
+                      onClick={() => toggleFavoriteStation(f.Station?.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

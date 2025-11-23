@@ -51,57 +51,48 @@ export default function Visualization() {
 
   return (
     <div>
-      <h1 className="admin-page-title">
-        <TrendingUp size={28} />
-        Admin Visualization
-      </h1>
-
-      <div className="admin-card">
-      <div className="admin-card-header">
-        <div>
-          <div className="admin-card-title">Admin Visualization</div>
-          <div className="admin-section-title" style={{ marginTop: 6 }}>
-            Explore aggregated analytics for the system
-          </div>
-        </div>
-        <div className="chart-tabs" style={{ alignSelf: "flex-start" }}>
-          <div className="tab-list">
-            <button
-              className={`admin-btn ${activeTab === "age" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
-              onClick={() => setActiveTab("age")}
-            >
-              Age buckets
-            </button>
-            <button
-              className={`admin-btn ${activeTab === "stations" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
-              onClick={() => setActiveTab("stations")}
-            >
-              Stations
-            </button>
-            <button
-              className={`admin-btn ${activeTab === "reports" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
-              onClick={() => setActiveTab("reports")}
-            >
-              Reports
-            </button>
-          </div>
-        </div>
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">
+          <TrendingUp size={28} /> Admin Visualization
+        </h1>
       </div>
 
-      <div style={{ padding: "0 1.5rem 1.5rem" }}>
+      <div className="card">
+      <div className="chart-tabs">
+        <div className="tab-list">
+          <button
+            className={`admin-btn ${activeTab === "age" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
+            onClick={() => setActiveTab("age")}
+          >
+            Age buckets
+          </button>
+          <button
+            className={`admin-btn ${activeTab === "stations" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
+            onClick={() => setActiveTab("stations")}
+          >
+            Stations
+          </button>
+          <button
+            className={`admin-btn ${activeTab === "reports" ? "admin-btn-secondary" : "admin-btn-ghost"}`}
+            onClick={() => setActiveTab("reports")}
+          >
+            Reports
+          </button>
+        </div>
+
         <div className="chart-grid">
           <div className="chart-item" style={{ display: activeTab === "age" ? "block" : "none" }}>
-            <h4 className="admin-card-title">Users: Age buckets</h4>
+            <h4>Users: Age buckets</h4>
             <div ref={ageRef} className="viz-chart" />
           </div>
 
           <div className="chart-item" style={{ display: activeTab === "stations" ? "block" : "none" }}>
-            <h4 className="admin-card-title">Stations: Available / Capacity</h4>
+            <h4>Stations: Available / Capacity</h4>
             <div ref={stationsRef} className="viz-chart" />
           </div>
 
           <div className="chart-item" style={{ display: activeTab === "reports" ? "block" : "none" }}>
-            <h4 className="admin-card-title">Reports: Resolved vs Processing</h4>
+            <h4>Reports: Resolved vs Processing</h4>
             <div ref={reportsRef} className="viz-chart" />
           </div>
         </div>
@@ -113,7 +104,7 @@ export default function Visualization() {
 function renderAgeHistogram(container, data) {
   clearNode(container);
   const margin = { top: 20, right: 12, bottom: 30, left: 36 };
-  const width = Math.max(360, ((container && container.clientWidth) || 800) - margin.left - margin.right);
+  const width = Math.max(360, (container?.clientWidth || 800) - margin.left - margin.right);
   const height = 220 - margin.top - margin.bottom;
 
   const svg = d3
@@ -161,7 +152,7 @@ function renderAgeHistogram(container, data) {
 function renderStationsBar(container, data) {
   clearNode(container);
   const margin = { top: 10, right: 10, bottom: 80, left: 50 };
-  const width = Math.max(360, ((container && container.clientWidth) || 800) - margin.left - margin.right);
+  const width = Math.max(360, (container?.clientWidth || 800) - margin.left - margin.right);
   const height = 260 - margin.top - margin.bottom;
 
   const svg = d3
@@ -216,7 +207,7 @@ function renderStationsBar(container, data) {
 function renderReportsDonut(container, reports) {
   clearNode(container);
   const counts = (reports.counts || []).map((r) => ({ status: r.status, count: r.count }));
-  const width = Math.max(280, ((container && container.clientWidth) || 400));
+  const width = Math.max(280, (container?.clientWidth || 400));
   const height = 220;
   const radius = Math.min(width, height) / 2 - 10;
 

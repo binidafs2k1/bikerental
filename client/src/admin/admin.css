@@ -704,7 +704,12 @@ body {
 
 /* User Management - Enhanced Typography & Styles */
 .admin-page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .admin-page-title {

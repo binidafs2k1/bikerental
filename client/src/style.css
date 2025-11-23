@@ -297,10 +297,12 @@ body {
   align-items: start;
 }
 
+
 .chart-tabs .tab-list {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .btn.ghost {
@@ -310,7 +312,7 @@ body {
 }
 
 .btn.ghost:hover {
-  background: rgba(0,0,0,0.03);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .chart-item {

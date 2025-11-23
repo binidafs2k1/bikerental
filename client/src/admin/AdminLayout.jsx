@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  TrendingUp,
 } from "lucide-react";
 import "./admin.css";
 
@@ -54,6 +55,11 @@ export default function AdminLayout({ username, onLogout }) {
       id: "posts",
       label: "Posts",
       icon: <MessageSquare size={20} />,
+    },
+    {
+      id: "visualization",
+      label: "Visualization",
+      icon: <TrendingUp size={20} />,
     },
   ];
 

@@ -227,4 +227,71 @@ router.get("/posts", adminOnly, async (req, res) => {
   res.json(posts);
 });
 
+// Admin visualization endpoint used by admin UI / D3 visualizations
+// Returns aggregated data: users by age buckets, station bike counts, and report status counts with percentages
+router.get("/visualization", adminOnly, async (req, res) => {
+  try {
+    // Users -> age buckets (0-9, 10-19, ...). Null ages labeled 'unknown'.
+    const usersRows = await query(
+      `SELECT
+         CASE WHEN age IS NULL THEN -1 ELSE FLOOR(age/10) END AS bucket_index,
+         CASE WHEN age IS NULL THEN 'unknown' ELSE CONCAT(FLOOR(age/10)*10, '-', FLOOR(age/10)*10 + 9) END AS bucket_label,
+         COUNT(*) AS count
+       FROM Users
+       GROUP BY bucket_index, bucket_label
+       ORDER BY bucket_index ASC`
+    );
+
+    const usersAgeBuckets = usersRows.map((r) => ({
+      bucket: r.bucket_label,
+      count: Number(r.count || 0),
+    }));
+
+    // Stations -> how many bikes available / capacity per station
+    const stationRows = await query(
+      `SELECT id, name, available, capacity FROM Stations ORDER BY id`
+    );
+    const stationsBikeCounts = stationRows.map((s) => ({
+      id: s.id,
+      name: s.name,
+      available: Number(s.available || 0),
+      capacity: Number(s.capacity || 0),
+    }));
+
+    // Reports -> counts per status
+    const reportStatusRows = await query(
+      `SELECT status, COUNT(*) as count FROM Reports GROUP BY status`
+    );
+    const reportCounts = reportStatusRows.map((r) => ({
+      status: r.status,
+      count: Number(r.count || 0),
+    }));
+
+    const totalReports = reportCounts.reduce((s, r) => s + r.count, 0);
+    // Treat anything with status === 'resolved' as handled; others considered processing
+    const resolvedCount = reportCounts
+      .filter((r) => (r.status || "").toLowerCase() === "resolved")
+      .reduce((s, r) => s + r.count, 0);
+    const processingCount = totalReports - resolvedCount;
+    const resolvedPercent = totalReports === 0 ? 0 : Math.round((resolvedCount / totalReports) * 100);
+    const processingPercent = totalReports === 0 ? 0 : 100 - resolvedPercent;
+
+    res.json({
+      usersAgeBuckets,
+      stationsBikeCounts,
+      reports: {
+        counts: reportCounts,
+        total: totalReports,
+        resolvedCount,
+        processingCount,
+        resolvedPercent,
+        processingPercent,
+      },
+    });
+  } catch (err) {
+    console.error("Error building visualization summary:", err);
+    res.status(500).json({ error: "Failed to build visualization summary" });
+  }
+});
+
 module.exports = router;

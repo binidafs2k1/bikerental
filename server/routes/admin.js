@@ -31,12 +31,17 @@ router.delete("/posts/:id", adminOnly, async (req, res) => {
 });
 // Admin: view all reports
 router.get("/reports", adminOnly, async (req, res) => {
-  const reports = await query(
+  const rows = await query(
     `SELECT r.*, s.id as station_id, s.name as station_name, u.id as user_id, u.username as user_username
      FROM Reports r
      LEFT JOIN Stations s ON r.StationId = s.id
      LEFT JOIN Users u ON r.UserId = u.id`
   );
+  const reports = rows.map((r) => ({
+    ...r,
+    Station: r.station_id ? { id: r.station_id, name: r.station_name } : null,
+    User: r.user_id ? { id: r.user_id, username: r.user_username } : null,
+  }));
   res.json(reports);
 });
 
@@ -201,11 +206,15 @@ router.post("/stations/:id/capacity", adminOnly, async (req, res) => {
 
 // Manage posts
 router.get("/posts", adminOnly, async (req, res) => {
-  const posts = await query(
+  const rows = await query(
     `SELECT p.*, u.id as user_id, u.username as user_username
      FROM Posts p
      LEFT JOIN Users u ON p.UserId = u.id`
   );
+  const posts = rows.map((p) => ({
+    ...p,
+    User: p.user_id ? { id: p.user_id, username: p.user_username } : null,
+  }));
   res.json(posts);
 });
 

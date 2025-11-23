@@ -12,8 +12,21 @@ export default function Rentals() {
     loadStations();
   }, []);
   async function fetch() {
-    const res = await API.get("/rentals/me");
-    setRentals(res.data.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)));
+    try {
+      const res = await API.get("/rentals/me");
+      setRentals(
+        res.data.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+      );
+    } catch (err) {
+      // if unauthorized, clear rentals and show a helpful message
+      if (err.response?.status === 401) {
+        alert("Please log in to view your rentals.");
+        setRentals([]);
+        return;
+      }
+      console.error("Failed to load rentals", err);
+      setRentals([]);
+    }
   }
 
   async function loadStations() {
@@ -29,21 +42,28 @@ export default function Rentals() {
     setReturning(r);
     // default select to first open station if available
     const openStations = stations.filter((s) => s.open);
-    setSelectedStation(openStations[0]?.id || "");
+    setSelectedStation(openStations[0]?.id ? Number(openStations[0].id) : "");
   }
 
   async function submitReturn() {
     if (!returning) return;
-    if (!selectedStation) {
+    if (!selectedStation && selectedStation !== 0) {
       alert("Please choose a station to return to");
       return;
     }
-    const confirmed = window.confirm(`Are you sure you want to return the bike to ${stations.find(s => s.id === selectedStation)?.name}?`);
+    const targetStation = stations.find(
+      (s) => s.id === Number(selectedStation)
+    );
+    const confirmed = window.confirm(
+      `Are you sure you want to return the bike to ${
+        targetStation?.name || "the selected station"
+      }?`
+    );
     if (!confirmed) return;
     try {
       await API.post("/rentals/return", {
         rentalId: returning.id,
-        stationId: selectedStation,
+        stationId: Number(selectedStation),
       });
       alert("Bike returned successfully!");
       setReturning(null);
@@ -51,7 +71,14 @@ export default function Rentals() {
       fetch();
       loadStations();
     } catch (e) {
-      alert(e.response?.data?.error || "Error returning bike");
+      if (e.response?.status === 401) {
+        alert("You must be logged in to return a bike.");
+      } else if (e.response?.status === 403) {
+        alert("You are not allowed to return this rental.");
+      } else {
+        alert(e.response?.data?.error || "Error returning bike");
+      }
+      console.error("Return error:", e);
     }
   }
 
@@ -77,18 +104,23 @@ export default function Rentals() {
                 <strong>From:</strong> {r.fromStation?.name || r.fromStationId}
               </div>
               <div className="rental-detail">
-                <strong>To:</strong> {r.toStation?.name || r.toStationId || "Not returned"}
+                <strong>To:</strong>{" "}
+                {r.toStation?.name || r.toStationId || "Not returned"}
               </div>
               <div className="rental-detail">
-                <strong>Started:</strong> {new Date(r.startedAt).toLocaleString()}
+                <strong>Started:</strong>{" "}
+                {new Date(r.startedAt).toLocaleString()}
               </div>
               <div className="rental-detail">
-                <strong>Ended:</strong> {r.endedAt ? new Date(r.endedAt).toLocaleString() : "Ongoing"}
+                <strong>Ended:</strong>{" "}
+                {r.endedAt ? new Date(r.endedAt).toLocaleString() : "Ongoing"}
               </div>
             </div>
             {r.status === "active" && (
               <div className="rental-actions">
-                <button onClick={() => beginReturn(r)} className="btn">Return Bike</button>
+                <button onClick={() => beginReturn(r)} className="btn">
+                  Return Bike
+                </button>
               </div>
             )}
           </div>
@@ -102,12 +134,19 @@ export default function Rentals() {
         <div className="return-modal-overlay">
           <div className="return-modal">
             <h4>Return Bike</h4>
-            <p>Rental #{returning.id} - Started: {new Date(returning.startedAt).toLocaleString()}</p>
+            <p>
+              Rental #{returning.id} - Started:{" "}
+              {new Date(returning.startedAt).toLocaleString()}
+            </p>
             <div className="form-group">
               <label className="form-label">Choose return station:</label>
               <select
                 value={selectedStation}
-                onChange={(e) => setSelectedStation(e.target.value)}
+                onChange={(e) =>
+                  setSelectedStation(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
                 className="form-select"
               >
                 <option value="">-- Select station --</option>
@@ -121,7 +160,11 @@ export default function Rentals() {
               </select>
             </div>
             <div className="modal-actions">
-              <button onClick={submitReturn} className="btn" disabled={!selectedStation}>
+              <button
+                onClick={submitReturn}
+                className="btn"
+                disabled={!selectedStation}
+              >
                 Confirm Return
               </button>
               <button onClick={cancelReturn} className="btn secondary">

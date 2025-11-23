@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const { query, pool } = require("../db");
+const { query, getPool } = require("../db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret-change-me";
 
@@ -19,8 +19,13 @@ function auth(req, res, next) {
 
 // Rent a bike from stationId
 router.post("/rent", auth, async (req, res) => {
-  const { stationId } = req.body;
-  const conn = await pool.getConnection();
+  let { stationId } = req.body;
+  stationId = Number(stationId);
+  if (!Number.isInteger(stationId) || stationId <= 0) {
+    return res.status(400).json({ error: "Invalid stationId" });
+  }
+  const p = await getPool();
+  const conn = await p.getConnection();
   try {
     await conn.beginTransaction();
     const [sRows] = await conn.execute(
@@ -46,8 +51,8 @@ router.post("/rent", auth, async (req, res) => {
       [stationId]
     );
     const [r] = await conn.execute(
-      "INSERT INTO Rentals (UserId, fromStationId) VALUES (?, ?)",
-      [req.user.id, stationId]
+      "INSERT INTO Rentals (UserId, fromStationId, startedAt, status) VALUES (?, ?, ?, ?)",
+      [Number(req.user.id), stationId, new Date(), "active"]
     );
     await conn.commit();
     res.json({ rentalId: r.insertId, status: "active" });
@@ -61,8 +66,17 @@ router.post("/rent", auth, async (req, res) => {
 
 // Return a bike to a station
 router.post("/return", auth, async (req, res) => {
-  const { rentalId, stationId } = req.body;
-  const conn = await pool.getConnection();
+  let { rentalId, stationId } = req.body;
+  rentalId = Number(rentalId);
+  stationId = Number(stationId);
+  if (!Number.isInteger(rentalId) || rentalId <= 0) {
+    return res.status(400).json({ error: "Invalid rentalId" });
+  }
+  if (!Number.isInteger(stationId) || stationId <= 0) {
+    return res.status(400).json({ error: "Invalid stationId" });
+  }
+  const p = await getPool();
+  const conn = await p.getConnection();
   try {
     await conn.beginTransaction();
     const [rRows] = await conn.execute(
@@ -74,7 +88,7 @@ router.post("/return", auth, async (req, res) => {
       await conn.rollback();
       return res.status(404).json({ error: "Rental not found" });
     }
-    if (rental.UserId !== req.user.id) {
+    if (Number(rental.UserId) !== Number(req.user.id)) {
       await conn.rollback();
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -117,7 +131,7 @@ router.post("/return", auth, async (req, res) => {
 
 // List current user's rentals
 router.get("/me", auth, async (req, res) => {
-  const rentals = await query(
+  const rows = await query(
     `SELECT r.*, fs.id as from_id, fs.name as from_name, ts.id as to_id, ts.name as to_name
      FROM Rentals r
      LEFT JOIN Stations fs ON r.fromStationId = fs.id
@@ -125,6 +139,11 @@ router.get("/me", auth, async (req, res) => {
      WHERE r.UserId = ?`,
     [req.user.id]
   );
+  const rentals = rows.map((r) => ({
+    ...r,
+    fromStation: r.from_id ? { id: r.from_id, name: r.from_name } : null,
+    toStation: r.to_id ? { id: r.to_id, name: r.to_name } : null,
+  }));
   res.json(rentals);
 });
 

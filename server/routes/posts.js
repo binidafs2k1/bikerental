@@ -21,20 +21,29 @@ function auth(req, res, next) {
 router.put("/:id", auth, async (req, res) => {
   const { id } = req.params;
   const { title, content } = req.body;
-  const post = await Post.findByPk(id);
+  const rows = await query("SELECT * FROM Posts WHERE id = ?", [id]);
+  const post = rows[0];
   if (!post) return res.status(404).json({ error: "Not found" });
   if (post.UserId !== req.user.id)
     return res.status(403).json({ error: "Forbidden" });
-  if (title) post.title = title;
-  if (content) post.content = content;
-  await post.save();
+
+  const newTitle = title !== undefined ? title : post.title;
+  const newContent = content !== undefined ? content : post.content;
   await query("UPDATE Posts SET title = ?, content = ? WHERE id = ?", [
-    title || post.title,
-    content || post.content,
+    newTitle,
+    newContent,
     id,
   ]);
-  const updated = await query("SELECT * FROM Posts WHERE id = ?", [id]);
-  res.json(updated[0]);
+
+  const updatedRows = await query(
+    `SELECT p.*, u.id as user_id, u.username as user_username FROM Posts p LEFT JOIN Users u ON p.UserId = u.id WHERE p.id = ?`,
+    [id]
+  );
+  const p = updatedRows[0];
+  res.json({
+    ...p,
+    User: p.user_id ? { id: p.user_id, username: p.user_username } : null,
+  });
 });
 
 // Delete post (user can delete their own)
@@ -50,11 +59,16 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const posts = await query(`
+  const rows = await query(`
     SELECT p.*, u.id as user_id, u.username as user_username
     FROM Posts p
     LEFT JOIN Users u ON p.UserId = u.id
   `);
+  // map to previous Sequelize-like shape: include nested User object
+  const posts = rows.map((p) => ({
+    ...p,
+    User: p.user_id ? { id: p.user_id, username: p.user_username } : null,
+  }));
   res.json(posts);
 });
 
@@ -64,10 +78,16 @@ router.post("/", auth, async (req, res) => {
     "INSERT INTO Posts (title, content, UserId) VALUES (?, ?, ?)",
     [title, content, req.user.id]
   );
-  const inserted = await query("SELECT * FROM Posts WHERE id = ?", [
-    result.insertId,
-  ]);
-  res.json(inserted[0]);
+  // fetch created row with user info
+  const rows = await query(
+    `SELECT p.*, u.id as user_id, u.username as user_username FROM Posts p LEFT JOIN Users u ON p.UserId = u.id WHERE p.id = ?`,
+    [result.insertId]
+  );
+  const p = rows[0];
+  res.json({
+    ...p,
+    User: p.user_id ? { id: p.user_id, username: p.user_username } : null,
+  });
 });
 
 module.exports = router;

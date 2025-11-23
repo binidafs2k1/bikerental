@@ -64,6 +64,12 @@ components:
           type: string
         UserId:
           type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         User:
           type: object
           properties:
@@ -83,6 +89,12 @@ components:
           example: open
         StationId:
           type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         UserId:
           type: integer
     Rental:

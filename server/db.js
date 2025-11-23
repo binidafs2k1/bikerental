@@ -133,6 +133,8 @@ async function init() {
       title VARCHAR(255) NOT NULL,
       content TEXT NOT NULL,
       UserId INT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (UserId) REFERENCES Users(id) ON DELETE SET NULL
     );
   `);
@@ -144,6 +146,8 @@ async function init() {
       status VARCHAR(50) NOT NULL DEFAULT 'open',
       StationId INT,
       UserId INT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (StationId) REFERENCES Stations(id) ON DELETE SET NULL,
       FOREIGN KEY (UserId) REFERENCES Users(id) ON DELETE SET NULL
     );

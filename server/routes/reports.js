@@ -31,8 +31,19 @@ router.put("/:id", auth, async (req, res) => {
       description,
       id,
     ]);
-  const updated = await query("SELECT * FROM Reports WHERE id = ?", [id]);
-  res.json(updated[0]);
+  const updatedRows = await query(
+    `SELECT r.*, s.id as station_id, s.name as station_name, u.id as user_id, u.username as user_username
+    FROM Reports r LEFT JOIN Stations s ON r.StationId = s.id LEFT JOIN Users u ON r.UserId = u.id WHERE r.id = ?`,
+    [id]
+  );
+  const rr = updatedRows[0];
+  res.json({
+    ...rr,
+    Station: rr.station_id
+      ? { id: rr.station_id, name: rr.station_name }
+      : null,
+    User: rr.user_id ? { id: rr.user_id, username: rr.user_username } : null,
+  });
 });
 
 // Delete report (user can delete their own)
@@ -48,23 +59,32 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  const reports = await query(
+  const rows = await query(
     `SELECT r.*, s.id as station_id, s.name as station_name, u.id as user_id, u.username as user_username
      FROM Reports r
      LEFT JOIN Stations s ON r.StationId = s.id
      LEFT JOIN Users u ON r.UserId = u.id`
   );
+  const reports = rows.map((r) => ({
+    ...r,
+    Station: r.station_id ? { id: r.station_id, name: r.station_name } : null,
+    User: r.user_id ? { id: r.user_id, username: r.user_username } : null,
+  }));
   res.json(reports);
 });
 
 router.get("/me", auth, async (req, res) => {
-  const reports = await query(
+  const rows = await query(
     `SELECT r.*, s.id as station_id, s.name as station_name
      FROM Reports r
      LEFT JOIN Stations s ON r.StationId = s.id
      WHERE r.UserId = ?`,
     [req.user.id]
   );
+  const reports = rows.map((r) => ({
+    ...r,
+    Station: r.station_id ? { id: r.station_id, name: r.station_name } : null,
+  }));
   res.json(reports);
 });
 
@@ -74,10 +94,17 @@ router.post("/", auth, async (req, res) => {
     "INSERT INTO Reports (StationId, UserId, description) VALUES (?, ?, ?)",
     [stationId, req.user.id, description]
   );
-  const inserted = await query("SELECT * FROM Reports WHERE id = ?", [
-    result.insertId,
-  ]);
-  res.json(inserted[0]);
+  const rows = await query(
+    `SELECT r.*, s.id as station_id, s.name as station_name, u.id as user_id, u.username as user_username
+    FROM Reports r LEFT JOIN Stations s ON r.StationId = s.id LEFT JOIN Users u ON r.UserId = u.id WHERE r.id = ?`,
+    [result.insertId]
+  );
+  const r = rows[0];
+  res.json({
+    ...r,
+    Station: r.station_id ? { id: r.station_id, name: r.station_name } : null,
+    User: r.user_id ? { id: r.user_id, username: r.user_username } : null,
+  });
 });
 
 module.exports = router;

@@ -1,33 +1,40 @@
-# Server (Express + SQLite)
+## Server (Express + MySQL)
 
-Prereqs: Node.js installed.
+Quick start (short):
 
-Install dependencies and start:
+1. Install & copy example env:
 
 ```powershell
 cd server
 npm install
-cp .env.example .env
-# edit .env if you want
+copy .env.example .env
+# edit .env to set DB_USER/DB_PASS/DB_NAME or DATABASE_URL (do NOT commit .env)
+```
+
+2. Check DB connectivity:
+
+```powershell
+npm run db:check
+```
+
+3. (Optional) Start fresh: drop tables and re-seed defaults:
+
+```powershell
+npm run db:reset
+```
+
+4. Start server:
+
+```powershell
 npm run start
 ```
 
-Default seeded admin: by default `username: admin`, `password: adminpass`.
-You can change the admin credentials by copying `.env.example` to `.env` and editing `ADMIN_USER` and `ADMIN_PASS` before starting the server.
+Notes:
 
-Example (`.env`):
+- Default admin account is seeded: username `admin`, password `adminpass` (change via .env).
+- Supported DB config: use either DATABASE_URL or DB_HOST/DB_USER/DB_PASS/DB_NAME in `.env`.
+- The server will create missing tables automatically when it starts (or when you run `db:reset`).
+- API routes (examples): POST `/auth/register`, POST `/auth/login`, GET `/stations`, GET `/posts`, GET `/reports`, and admin routes under `/admin` (needs Bearer token).
+- OpenAPI spec: `server/swagger.yaml` (you can open it in https://editor.swagger.io/)
 
-```
-ADMIN_USER=admin
-ADMIN_PASS=adminpass
-JWT_SECRET=your-secret-here
-```
-
-APIs:
-
-- `POST /auth/register` {username,password}
-- `POST /auth/login` {username,password} -> {token}
-- `GET /stations`
-- `GET /posts`
-- `GET /reports`
-- Admin endpoints under `/admin` require `Authorization: Bearer <token>` and admin role.
+Keep `.env` private (do not push credentials).

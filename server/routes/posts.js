@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Post, User } = require("../models");
+const { query } = require("../db");
 const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret-change-me";
@@ -28,31 +28,46 @@ router.put("/:id", auth, async (req, res) => {
   if (title) post.title = title;
   if (content) post.content = content;
   await post.save();
-  res.json(post);
+  await query("UPDATE Posts SET title = ?, content = ? WHERE id = ?", [
+    title || post.title,
+    content || post.content,
+    id,
+  ]);
+  const updated = await query("SELECT * FROM Posts WHERE id = ?", [id]);
+  res.json(updated[0]);
 });
 
 // Delete post (user can delete their own)
 router.delete("/:id", auth, async (req, res) => {
   const { id } = req.params;
-  const post = await Post.findByPk(id);
+  const postRows = await query("SELECT * FROM Posts WHERE id = ?", [id]);
+  const post = postRows[0];
   if (!post) return res.status(404).json({ error: "Not found" });
   if (post.UserId !== req.user.id)
     return res.status(403).json({ error: "Forbidden" });
-  await post.destroy();
+  await query("DELETE FROM Posts WHERE id = ?", [id]);
   res.json({ success: true });
 });
 
 router.get("/", async (req, res) => {
-  const posts = await Post.findAll({
-    include: [{ model: User, attributes: ["id", "username"] }],
-  });
+  const posts = await query(`
+    SELECT p.*, u.id as user_id, u.username as user_username
+    FROM Posts p
+    LEFT JOIN Users u ON p.UserId = u.id
+  `);
   res.json(posts);
 });
 
 router.post("/", auth, async (req, res) => {
   const { title, content } = req.body;
-  const post = await Post.create({ title, content, UserId: req.user.id });
-  res.json(post);
+  const result = await query(
+    "INSERT INTO Posts (title, content, UserId) VALUES (?, ?, ?)",
+    [title, content, req.user.id]
+  );
+  const inserted = await query("SELECT * FROM Posts WHERE id = ?", [
+    result.insertId,
+  ]);
+  res.json(inserted[0]);
 });
 
 module.exports = router;

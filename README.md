@@ -2,7 +2,7 @@
 
 This repository contains a starter fullstack project for a bike-share rental system.
 
-- Backend: Express + Sequelize + SQLite (in `server`)
+- Backend: Express + MySQL (raw SQL via `mysql2`) (in `server`)
 - Frontend: React + Vite (in `client`)
 
 Features included (starter):

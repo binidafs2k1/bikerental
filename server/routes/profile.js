@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { User } = require("../models");
+const { query } = require("../db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret-change-me";
 
@@ -19,20 +19,35 @@ function auth(req, res, next) {
 }
 
 router.get("/", auth, async (req, res) => {
-  const user = await User.findByPk(req.user.id, {
-    attributes: ["id", "username", "role"],
-  });
-  res.json(user);
+  const rows = await query(
+    "SELECT id, username, role FROM Users WHERE id = ?",
+    [req.user.id]
+  );
+  res.json(rows[0]);
 });
 
 router.put("/", auth, async (req, res) => {
   const { username, password } = req.body;
-  const user = await User.findByPk(req.user.id);
+  const rows = await query("SELECT * FROM Users WHERE id = ?", [req.user.id]);
+  const user = rows[0];
   if (!user) return res.status(404).json({ error: "Not found" });
-  if (username) user.username = username;
-  if (password) user.passwordHash = await bcrypt.hash(password, 10);
-  await user.save();
-  res.json({ id: user.id, username: user.username });
+  if (username) {
+    await query("UPDATE Users SET username = ? WHERE id = ?", [
+      username,
+      req.user.id,
+    ]);
+  }
+  if (password) {
+    const hash = await bcrypt.hash(password, 10);
+    await query("UPDATE Users SET passwordHash = ? WHERE id = ?", [
+      hash,
+      req.user.id,
+    ]);
+  }
+  const updated = await query("SELECT id, username FROM Users WHERE id = ?", [
+    req.user.id,
+  ]);
+  res.json(updated[0]);
 });
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const { User, Station, Post, Report } = require("../models");
+const { query } = require("../db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret-change-me";
 
@@ -23,14 +23,20 @@ function adminOnly(req, res, next) {
 // Admin: delete any post
 router.delete("/posts/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
-  const post = await Post.findByPk(id);
-  if (!post) return res.status(404).json({ error: "Not found" });
-  await post.destroy();
+  const post = await query("SELECT id FROM Posts WHERE id = ?", [id]);
+  if (!post || post.length === 0)
+    return res.status(404).json({ error: "Not found" });
+  await query("DELETE FROM Posts WHERE id = ?", [id]);
   res.json({ success: true });
 });
 // Admin: view all reports
 router.get("/reports", adminOnly, async (req, res) => {
-  const reports = await Report.findAll({ include: [Station, User] });
+  const reports = await query(
+    `SELECT r.*, s.id as station_id, s.name as station_name, u.id as user_id, u.username as user_username
+     FROM Reports r
+     LEFT JOIN Stations s ON r.StationId = s.id
+     LEFT JOIN Users u ON r.UserId = u.id`
+  );
   res.json(reports);
 });
 
@@ -38,55 +44,60 @@ router.get("/reports", adminOnly, async (req, res) => {
 router.put("/reports/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const report = await Report.findByPk(id);
-  if (!report) return res.status(404).json({ error: "Not found" });
-  if (status) report.status = status;
-  await report.save();
-  res.json(report);
+  const r = await query("SELECT * FROM Reports WHERE id = ?", [id]);
+  if (!r || r.length === 0) return res.status(404).json({ error: "Not found" });
+  if (status) {
+    await query("UPDATE Reports SET status = ? WHERE id = ?", [status, id]);
+  }
+  const updated = await query("SELECT * FROM Reports WHERE id = ?", [id]);
+  res.json(updated[0]);
 });
 
 // Admin: delete report
 router.delete("/reports/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
-  const report = await Report.findByPk(id);
-  if (!report) return res.status(404).json({ error: "Not found" });
-  await report.destroy();
+  const r = await query("SELECT id FROM Reports WHERE id = ?", [id]);
+  if (!r || r.length === 0) return res.status(404).json({ error: "Not found" });
+  await query("DELETE FROM Reports WHERE id = ?", [id]);
   res.json({ success: true });
 });
 
 // Manage users
 router.get("/users", adminOnly, async (req, res) => {
-  const users = await User.findAll({ attributes: ["id", "username", "role"] });
+  const users = await query("SELECT id, username, role FROM Users");
   res.json(users);
 });
 
 router.put("/users/:id/role", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
-  const user = await User.findByPk(id);
-  if (!user) return res.status(404).json({ error: "Not found" });
-  user.role = role;
-  await user.save();
-  res.json({ id: user.id, username: user.username, role: user.role });
+  const u = await query("SELECT * FROM Users WHERE id = ?", [id]);
+  if (!u || u.length === 0) return res.status(404).json({ error: "Not found" });
+  await query("UPDATE Users SET role = ? WHERE id = ?", [role, id]);
+  const updated = await query(
+    "SELECT id, username, role FROM Users WHERE id = ?",
+    [id]
+  );
+  res.json(updated[0]);
 });
 
 router.delete("/users/:id", adminOnly, async (req, res) => {
   const { id } = req.params;
-  const user = await User.findByPk(id);
-  if (!user) return res.status(404).json({ error: "Not found" });
+  const u = await query("SELECT * FROM Users WHERE id = ?", [id]);
+  if (!u || u.length === 0) return res.status(404).json({ error: "Not found" });
 
   // Prevent deleting self
-  if (user.id === req.user.id) {
+  if (Number(id) === req.user.id) {
     return res.status(400).json({ error: "Cannot delete yourself" });
   }
 
-  await user.destroy();
+  await query("DELETE FROM Users WHERE id = ?", [id]);
   res.json({ success: true });
 });
 
 // Manage stations
 router.get("/stations", adminOnly, async (req, res) => {
-  const stations = await Station.findAll();
+  const stations = await query("SELECT * FROM Stations");
   res.json(stations);
 });
 
@@ -100,15 +111,21 @@ router.post("/stations", adminOnly, async (req, res) => {
       return res.status(400).json({ error: "lat and lng must be numbers" });
     const capNum = capacity !== undefined ? Number(capacity) : 10;
     const availNum = available !== undefined ? Number(available) : 0;
-    const s = await Station.create({
-      name,
-      lat: latNum,
-      lng: lngNum,
-      capacity: capNum,
-      available: availNum,
-      open: open === undefined ? true : !!open,
-    });
-    res.json(s);
+    const result = await query(
+      "INSERT INTO Stations (name, lat, lng, capacity, available, open) VALUES (?, ?, ?, ?, ?, ?)",
+      [
+        name,
+        latNum,
+        lngNum,
+        capNum,
+        availNum,
+        open === undefined ? 1 : open ? 1 : 0,
+      ]
+    );
+    const inserted = await query("SELECT * FROM Stations WHERE id = ?", [
+      result.insertId,
+    ]);
+    res.json(inserted[0]);
   } catch (err) {
     console.error("Error creating station", err);
     res.status(400).json({ error: err.message });
@@ -116,18 +133,34 @@ router.post("/stations", adminOnly, async (req, res) => {
 });
 
 router.put("/stations/:id", adminOnly, async (req, res) => {
-  const s = await Station.findByPk(req.params.id);
-  if (!s) return res.status(404).json({ error: "Not found" });
-  Object.assign(s, req.body);
-  await s.save();
-  res.json(s);
+  const id = req.params.id;
+  const s = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  if (!s || s.length === 0) return res.status(404).json({ error: "Not found" });
+  // Build update
+  const fields = [];
+  const params = [];
+  for (const k of ["name", "lat", "lng", "capacity", "available", "open"]) {
+    if (req.body[k] !== undefined) {
+      fields.push(`${k} = ?`);
+      params.push(req.body[k]);
+    }
+  }
+  if (fields.length) {
+    await query(`UPDATE Stations SET ${fields.join(", ")} WHERE id = ?`, [
+      ...params,
+      id,
+    ]);
+  }
+  const updated = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  res.json(updated[0]);
 });
 
 // Delete station
 router.delete("/stations/:id", adminOnly, async (req, res) => {
-  const s = await Station.findByPk(req.params.id);
-  if (!s) return res.status(404).json({ error: "Not found" });
-  await s.destroy();
+  const id = req.params.id;
+  const s = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  if (!s || s.length === 0) return res.status(404).json({ error: "Not found" });
+  await query("DELETE FROM Stations WHERE id = ?", [id]);
   res.json({ success: true });
 });
 
@@ -135,33 +168,44 @@ router.delete("/stations/:id", adminOnly, async (req, res) => {
 router.post("/stations/:id/inventory", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { delta } = req.body; // integer: positive to add, negative to remove
-  const s = await Station.findByPk(id);
-  if (!s) return res.status(404).json({ error: "Not found" });
+  const sRows = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  if (!sRows || sRows.length === 0)
+    return res.status(404).json({ error: "Not found" });
+  const s = sRows[0];
   const newAvailable = s.available + Number(delta || 0);
   // clamp
-  s.available = Math.max(0, Math.min(newAvailable, s.capacity));
-  await s.save();
-  res.json(s);
+  const clamped = Math.max(0, Math.min(newAvailable, s.capacity));
+  await query("UPDATE Stations SET available = ? WHERE id = ?", [clamped, id]);
+  const updated = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  res.json(updated[0]);
 });
 
 // Set capacity explicitly
 router.post("/stations/:id/capacity", adminOnly, async (req, res) => {
   const { id } = req.params;
   const { capacity } = req.body;
-  const s = await Station.findByPk(id);
-  if (!s) return res.status(404).json({ error: "Not found" });
-  s.capacity = Number(capacity || s.capacity);
-  // ensure available <= capacity
-  if (s.available > s.capacity) s.available = s.capacity;
-  await s.save();
-  res.json(s);
+  const sRows = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  if (!sRows || sRows.length === 0)
+    return res.status(404).json({ error: "Not found" });
+  const s = sRows[0];
+  const cap = Number(capacity || s.capacity);
+  const avail = s.available > cap ? cap : s.available;
+  await query("UPDATE Stations SET capacity = ?, available = ? WHERE id = ?", [
+    cap,
+    avail,
+    id,
+  ]);
+  const updated = await query("SELECT * FROM Stations WHERE id = ?", [id]);
+  res.json(updated[0]);
 });
 
 // Manage posts
 router.get("/posts", adminOnly, async (req, res) => {
-  const posts = await Post.findAll({
-    include: [{ model: User, attributes: ["id", "username"] }],
-  });
+  const posts = await query(
+    `SELECT p.*, u.id as user_id, u.username as user_username
+     FROM Posts p
+     LEFT JOIN Users u ON p.UserId = u.id`
+  );
   res.json(posts);
 });
 

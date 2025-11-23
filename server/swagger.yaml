@@ -1,0 +1,712 @@
+openapi: 3.0.3
+info:
+  title: Bike Rental API
+  version: "1.0.0"
+  description: |-
+    Simple bike rental backend (Express + MySQL using mysql2) — OpenAPI specification generated from the server source.
+servers:
+  - url: http://localhost:4000
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: alice
+        role:
+          type: string
+          example: user
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+    Station:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        lat:
+          type: number
+          format: float
+        lng:
+          type: number
+          format: float
+        capacity:
+          type: integer
+        available:
+          type: integer
+        open:
+          type: boolean
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        UserId:
+          type: integer
+        User:
+          type: object
+          properties:
+            id:
+              type: integer
+            username:
+              type: string
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        status:
+          type: string
+          example: open
+        StationId:
+          type: integer
+        UserId:
+          type: integer
+    Rental:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          example: active
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        UserId:
+          type: integer
+        fromStationId:
+          type: integer
+        toStationId:
+          type: integer
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
+      responses:
+        "200":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  username:
+                    type: string
+
+  /auth/login:
+    post:
+      summary: Login and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
+      responses:
+        "200":
+          description: Authentication result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /stations:
+    get:
+      summary: List all stations
+      responses:
+        "200":
+          description: list of stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Station"
+
+  /stations/{id}:
+    get:
+      summary: Get a station by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: station
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "404":
+          description: Not found
+
+  /stations/{id}/toggle:
+    put:
+      summary: Toggle open/closed for a station
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: station updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Station"
+        "404": { description: Not found }
+
+  /posts:
+    get:
+      summary: List posts
+      responses:
+        "200":
+          description: list of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+    post:
+      summary: Create a post (authenticated)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+              required: [title, content]
+      responses:
+        "200":
+          description: created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{id}:
+    put:
+      summary: Update a post (owner-authenticated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                content: { type: string }
+      responses:
+        "200":
+          description: updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      summary: Delete a post (owner-authenticated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: success flag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /reports:
+    get:
+      summary: List all reports
+      responses:
+        "200":
+          description: list of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+    post:
+      summary: Create a report (authenticated)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stationId: { type: integer }
+                description: { type: string }
+              required: [stationId, description]
+      responses:
+        "200":
+          description: created report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
+  /reports/me:
+    get:
+      summary: Get current user's reports
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: user reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+
+  /reports/{id}:
+    put:
+      summary: Update a report (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description: { type: string }
+      responses:
+        "200": { description: updated report }
+        "403": { description: Forbidden }
+        "404": { description: Not found }
+    delete:
+      summary: Delete a report (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: success }
+
+  /profile:
+    get:
+      summary: Get current user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      summary: Update current user's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200": { description: updated user basic info }
+
+  /stats/stations:
+    get:
+      summary: Aggregated station data for visualization
+      responses:
+        "200":
+          description: station aggregation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+                        available: { type: integer }
+                        capacity: { type: integer }
+
+  /rentals/rent:
+    post:
+      summary: Rent a bike from a station (authenticated)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stationId: { type: integer }
+              required: [stationId]
+      responses:
+        "200":
+          description: rental started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rentalId: { type: integer }
+                  status: { type: string }
+
+  /rentals/return:
+    post:
+      summary: Return a bike to a station (authenticated)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rentalId: { type: integer }
+                stationId: { type: integer }
+              required: [rentalId, stationId]
+      responses:
+        "200":
+          description: rental returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rentalId: { type: integer }
+                  status: { type: string }
+
+  /rentals/me:
+    get:
+      summary: List current user's rentals
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: list of rentals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rental"
+
+  /admin/posts/{id}:
+    delete:
+      summary: Admin - delete any post
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: success }
+
+  /admin/reports:
+    get:
+      summary: Admin - list all reports
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: list of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+
+  /admin/reports/{id}:
+    put:
+      summary: Admin - update report status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+      responses:
+        "200": { description: updated report }
+    delete:
+      summary: Admin - delete report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: success }
+
+  /admin/users:
+    get:
+      summary: Admin - list users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /admin/users/{id}/role:
+    put:
+      summary: Admin - change user role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role: { type: string }
+      responses:
+        "200": { description: updated user }
+
+  /admin/users/{id}:
+    delete:
+      summary: Admin - delete a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: success }
+
+  /admin/stations:
+    get:
+      summary: Admin - list stations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: list stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Station"
+    post:
+      summary: Admin - create a station
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+                capacity: { type: integer }
+                available: { type: integer }
+                open: { type: boolean }
+      responses:
+        "200": { description: created station }
+
+  /admin/stations/{id}:
+    put:
+      summary: Admin - update a station
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": { description: updated station }
+    delete:
+      summary: Admin - delete a station
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: success }
+
+  /admin/stations/{id}/inventory:
+    post:
+      summary: Admin - adjust station inventory (delta)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delta: { type: integer }
+      responses:
+        "200": { description: updated station }
+
+  /admin/stations/{id}/capacity:
+    post:
+      summary: Admin - set station capacity
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                capacity: { type: integer }
+      responses:
+        "200": { description: updated station }
+
+  /admin/posts:
+    get:
+      summary: Admin - list posts with author info
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: list of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"

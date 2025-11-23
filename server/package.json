@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "db:check": "node scripts/checkDb.js",
+    "db:reset": "node scripts/resetDb.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {
@@ -12,8 +14,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "sequelize": "^6.32.1",
-    "sqlite3": "^5.1.6"
+    "mysql2": "^3.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

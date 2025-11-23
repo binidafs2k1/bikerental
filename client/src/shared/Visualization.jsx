@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
+import { TrendingUp } from "lucide-react";
 import API from "../api";
 import * as d3 from "d3";
-import { TrendingUp } from "lucide-react";
 
 function clearNode(node) {
   if (!node) return;
@@ -49,26 +49,21 @@ export default function Visualization() {
     }
   }, [data, activeTab]);
 
-  const activeTitles = {
-    age: "Users: Age buckets",
-    stations: "Stations: Available / Capacity",
-    reports: "Reports: Resolved vs Processing",
-  };
-
   return (
     <div>
-      <div className="admin-page-header">
-        <h1 className="admin-page-title">
-          <TrendingUp size={28} />
-          Admin Visualization
-        </h1>
-      </div>
+      <h1 className="admin-page-title">
+        <TrendingUp size={28} />
+        Admin Visualization
+      </h1>
 
       <div className="admin-card">
       <div className="admin-card-header">
-        <h3 className="admin-card-title">
-          <TrendingUp size={20} /> {activeTitles[activeTab]}
-        </h3>
+        <div>
+          <div className="admin-card-title">Admin Visualization</div>
+          <div className="admin-section-title" style={{ marginTop: 6 }}>
+            Explore aggregated analytics for the system
+          </div>
+        </div>
         <div className="chart-tabs" style={{ alignSelf: "flex-start" }}>
           <div className="tab-list">
             <button
@@ -96,17 +91,17 @@ export default function Visualization() {
       <div style={{ padding: "0 1.5rem 1.5rem" }}>
         <div className="chart-grid">
           <div className="chart-item" style={{ display: activeTab === "age" ? "block" : "none" }}>
-            {/* title is shown in the card header */}
+            <h4 className="admin-card-title">Users: Age buckets</h4>
             <div ref={ageRef} className="viz-chart" />
           </div>
 
           <div className="chart-item" style={{ display: activeTab === "stations" ? "block" : "none" }}>
-            {/* title is shown in the card header */}
+            <h4 className="admin-card-title">Stations: Available / Capacity</h4>
             <div ref={stationsRef} className="viz-chart" />
           </div>
 
           <div className="chart-item" style={{ display: activeTab === "reports" ? "block" : "none" }}>
-            {/* title is shown in the card header */}
+            <h4 className="admin-card-title">Reports: Resolved vs Processing</h4>
             <div ref={reportsRef} className="viz-chart" />
           </div>
         </div>

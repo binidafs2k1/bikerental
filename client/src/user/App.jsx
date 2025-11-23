@@ -14,7 +14,6 @@ import {
   Bike,
   User,
   BarChart3,
-  Menu,
   LogOut,
 } from "lucide-react";
 import Stations from "../shared/Stations";
@@ -22,7 +21,6 @@ import Posts from "../shared/Posts";
 import ReportForm from "../shared/ReportForm";
 import Rentals from "../shared/Rentals";
 import Profile from "../shared/Profile";
-import MobileNav from "./MobileNav";
 
 const navLinks = [
   { label: "Home", path: "/home", icon: <LayoutDashboard size={18} /> },
@@ -33,7 +31,6 @@ const navLinks = [
 ];
 
 export default function UserApp() {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
   return (
     <Router>
       <div className="user-layout">
@@ -82,15 +79,6 @@ export default function UserApp() {
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </main>
-          {/* Mobile nav rendered alongside main content, visible only on small screens */}
-          <button
-            className="user-mobile-toggle"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            onClick={() => setMobileOpen((s) => !s)}
-          >
-            <Menu size={18} />
-          </button>
-          <MobileNav links={navLinks} open={mobileOpen} onClose={() => setMobileOpen(false)} />
         </div>
       </div>
     </Router>

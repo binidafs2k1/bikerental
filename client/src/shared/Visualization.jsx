@@ -113,7 +113,7 @@ export default function Visualization() {
 function renderAgeHistogram(container, data) {
   clearNode(container);
   const margin = { top: 20, right: 12, bottom: 30, left: 36 };
-  const width = Math.max(360, (container?.clientWidth || 800) - margin.left - margin.right);
+  const width = Math.max(360, ((container && container.clientWidth) || 800) - margin.left - margin.right);
   const height = 220 - margin.top - margin.bottom;
 
   const svg = d3
@@ -161,7 +161,7 @@ function renderAgeHistogram(container, data) {
 function renderStationsBar(container, data) {
   clearNode(container);
   const margin = { top: 10, right: 10, bottom: 80, left: 50 };
-  const width = Math.max(360, (container?.clientWidth || 800) - margin.left - margin.right);
+  const width = Math.max(360, ((container && container.clientWidth) || 800) - margin.left - margin.right);
   const height = 260 - margin.top - margin.bottom;
 
   const svg = d3
@@ -216,7 +216,7 @@ function renderStationsBar(container, data) {
 function renderReportsDonut(container, reports) {
   clearNode(container);
   const counts = (reports.counts || []).map((r) => ({ status: r.status, count: r.count }));
-  const width = Math.max(280, (container?.clientWidth || 400));
+  const width = Math.max(280, ((container && container.clientWidth) || 400));
   const height = 220;
   const radius = Math.min(width, height) / 2 - 10;
 

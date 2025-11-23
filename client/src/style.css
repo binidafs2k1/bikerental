@@ -564,7 +564,33 @@ body {
   }
 
   .map-wrapper {
-    min-height: 260px; /* smaller map height for phones */
+    min-height: 300px; /* smaller map height for phones */
+  }
+
+  /* Simplify hero card on mobile: hide heading and subtitle, keep search/filter only */
+  .hero-label,
+  .hero-title,
+  .hero-subtitle {
+    display: none;
+  }
+
+  .hero-card {
+    padding: 0.75rem 1rem; /* reduce padding to emphasize search */
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-search {
+    width: 100%;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .hero-search .input-with-icon,
+  .hero-search .filter-select {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 }
 

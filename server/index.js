@@ -34,7 +34,11 @@ async function start() {
   // Optional: automatic import from sample (or real provider) every minute.
   // Enable via env: DDARUNGI_SAMPLE_ENABLED=true (no auth) OR DDARUNGI_ENABLED=true when using real API + key.
   try {
-    const enabledSample = (process.env.DDARUNGI_SAMPLE_ENABLED || "").toLowerCase() === "true";
+    // Default behaviour: enable the sample importer automatically unless explicitly disabled.
+    // This makes development easier (sample data imports every minute). Set DDARUNGI_SAMPLE_ENABLED=false
+    // to disable scheduled sample imports.
+    const enabledSampleEnv = process.env.DDARUNGI_SAMPLE_ENABLED;
+    const enabledSample = typeof enabledSampleEnv === "undefined" ? true : String(enabledSampleEnv).toLowerCase() === "true";
     const enabled = (process.env.DDARUNGI_ENABLED || "").toLowerCase() === "true";
     if (enabledSample || enabled) {
       const { importSeoulSample } = require("./scripts/importSeoulSample");

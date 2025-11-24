@@ -39,6 +39,7 @@ Notes:
 - Import sample API: You can trigger an import of the sample Seoul bike API (or set a custom URL) via POST `/admin/import/ddarungi` (admin-only). This will upsert stations into the `Stations` table and set `source='ddarungi'` + `sourceId`.
 
 - Automatic imports: you can enable scheduled imports every 60s by setting `DDARUNGI_SAMPLE_ENABLED=true` (uses the sample URL) or `DDARUNGI_ENABLED=true` (uses DDARUNGI_API_URL / API key when available). See the scripts/importSeoulSample.js implementation for mapping details.
+  - Note: by default the sample importer is enabled when `DDARUNGI_SAMPLE_ENABLED` is not set (true by default). To disable automatic imports in dev set `DDARUNGI_SAMPLE_ENABLED=false` in your `.env`.
 - New admin visualization route (for admin UI / D3): `GET /admin/visualization` — returns aggregation data (admin-only).
 
 Example response:

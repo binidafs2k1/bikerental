@@ -2,7 +2,7 @@ const { query } = require("../db");
 
 // Default sample URL; can be overridden with DDARUNGI_SAMPLE_URL
 const DEFAULT_SAMPLE_URL =
-  process.env.DDARUNGI_SAMPLE_URL ||
+  process.env.DDARUNGI_API_URL ||
   "http://openapi.seoul.go.kr:8088/sample/json/bikeList/1/5/";
 
 async function fetchJson(url) {

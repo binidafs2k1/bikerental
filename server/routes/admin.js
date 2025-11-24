@@ -227,6 +227,20 @@ router.get("/posts", adminOnly, async (req, res) => {
   res.json(posts);
 });
 
+// Admin: trigger import from Seoul sample (or custom URL) and upsert to Stations
+router.post("/import/ddarungi", adminOnly, async (req, res) => {
+  try {
+    const { importSeoulSample } = require("../scripts/importSeoulSample");
+    // optional url override in body
+    const url = req.body?.url;
+    const result = await importSeoulSample(url);
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error("Import failed:", err);
+    res.status(500).json({ ok: false, error: err.message || String(err) });
+  }
+});
+
 // Admin visualization endpoint used by admin UI / D3 visualizations
 // Returns aggregated data: users by age buckets, station bike counts, and report status counts with percentages
 router.get("/visualization", adminOnly, async (req, res) => {

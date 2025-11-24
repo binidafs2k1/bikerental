@@ -35,6 +35,10 @@ Notes:
 - Supported DB config: use either DATABASE_URL or DB_HOST/DB_USER/DB_PASS/DB_NAME in `.env`.
 - The server will create missing tables automatically when it starts (or when you run `db:reset`).
 - API routes (examples): POST `/auth/register`, POST `/auth/login`, GET `/stations`, GET `/posts`, GET `/reports`, and admin routes under `/admin` (needs Bearer token).
+
+- Import sample API: You can trigger an import of the sample Seoul bike API (or set a custom URL) via POST `/admin/import/ddarungi` (admin-only). This will upsert stations into the `Stations` table and set `source='ddarungi'` + `sourceId`.
+
+- Automatic imports: you can enable scheduled imports every 60s by setting `DDARUNGI_SAMPLE_ENABLED=true` (uses the sample URL) or `DDARUNGI_ENABLED=true` (uses DDARUNGI_API_URL / API key when available). See the scripts/importSeoulSample.js implementation for mapping details.
 - New admin visualization route (for admin UI / D3): `GET /admin/visualization` — returns aggregation data (admin-only).
 
 Example response:

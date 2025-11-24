@@ -162,6 +162,40 @@ async function init() {
     );
   `);
 
+  // Ensure Stations has optional columns for external imports
+  try {
+    const haveSource = await query("SHOW COLUMNS FROM Stations LIKE 'source'");
+    if (!haveSource || haveSource.length === 0) {
+      await query("ALTER TABLE Stations ADD COLUMN source VARCHAR(100) DEFAULT NULL");
+    }
+  } catch (e) {
+    console.warn("Could not ensure Stations.source column:", e.message || e);
+  }
+  try {
+    const haveSourceId = await query("SHOW COLUMNS FROM Stations LIKE 'sourceId'");
+    if (!haveSourceId || haveSourceId.length === 0) {
+      await query("ALTER TABLE Stations ADD COLUMN sourceId VARCHAR(255) DEFAULT NULL");
+    }
+  } catch (e) {
+    console.warn("Could not ensure Stations.sourceId column:", e.message || e);
+  }
+  try {
+    const haveImportedAt = await query("SHOW COLUMNS FROM Stations LIKE 'lastImportedAt'");
+    if (!haveImportedAt || haveImportedAt.length === 0) {
+      await query("ALTER TABLE Stations ADD COLUMN lastImportedAt DATETIME DEFAULT NULL");
+    }
+  } catch (e) {
+    console.warn("Could not ensure Stations.lastImportedAt column:", e.message || e);
+  }
+  try {
+    const haveShared = await query("SHOW COLUMNS FROM Stations LIKE 'shared'");
+    if (!haveShared || haveShared.length === 0) {
+      await query("ALTER TABLE Stations ADD COLUMN shared VARCHAR(255) DEFAULT NULL");
+    }
+  } catch (e) {
+    console.warn("Could not ensure Stations.shared column:", e.message || e);
+  }
+
   await query(`
     CREATE TABLE IF NOT EXISTS Posts (
       id INT AUTO_INCREMENT PRIMARY KEY,
